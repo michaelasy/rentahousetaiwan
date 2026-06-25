@@ -482,7 +482,7 @@ header small{font-size:.75rem;opacity:.75}
   <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:16px">
     <button id="wt-list" onclick="wTab('list')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;transition:all .2s">📋 收藏清單</button>
     <button id="wt-schedule" onclick="wTab('schedule')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);transition:all .2s">📅 看房行程</button>
-    <button id="wt-overview" onclick="wTab('overview')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);transition:all .2s">🗺 總覽</button>
+    <button id="wt-overview" onclick="wTab('overview')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);transition:all .2s">🗺 總覽 (地圖版)</button>
   </div>
 
   <!-- ── 收藏清單 ── -->
@@ -555,21 +555,18 @@ header small{font-size:.75rem;opacity:.75}
   <div id="wpane-overview" style="display:none">
     <!-- 地圖預留位置 -->
     <div class="fcard" style="border:2px dashed var(--accent2)">
-      <h2>🗺 地圖（等待 Google Maps API Key）</h2>
+      <h2>🗺 看房地圖與周邊機能</h2>
       <div style="background:var(--surface2);border-radius:10px;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink2);gap:12px">
         <span style="font-size:2.5rem">🗺</span>
         <div style="text-align:center;font-size:.85rem;line-height:1.7">
-          地圖功能準備好了，等你拿到 Google Maps API Key<br>
-          只要填入 key 就會自動顯示所有房子位置＋附近機能
-        </div>
-        <div style="font-size:.75rem;color:var(--accent);font-weight:700">
-          附近機能：醫院・健身房・便利商店・傳統市場・夜市<br>
-          超市・公車站・UBike・停車場
+          貼上 API Key 即可啟動地圖。<br>
+          點擊房子會自動搜尋方圓800公尺內的：<br>
+          醫院・健身房・便利商店・超市・停車場・公車站
         </div>
         <input id="maps-api-key" placeholder="貼上 Google Maps API Key 啟動地圖" style="border:1.5px solid var(--accent2);border-radius:8px;padding:8px 12px;font-size:.82rem;width:80%;max-width:360px;text-align:center;font-family:inherit">
         <button class="btn btnp" onclick="activateMap()" style="font-size:.82rem;padding:7px 18px">🗺 啟動地圖</button>
       </div>
-      <div id="map-container" style="display:none;border-radius:10px;overflow:hidden;height:400px;margin-top:12px"></div>
+      <div id="map-container" style="display:none;border-radius:10px;overflow:hidden;height:450px;margin-top:12px"></div>
     </div>
 
     <!-- 現在在看哪些房 -->
@@ -1014,11 +1011,11 @@ function renderGrid(){
         ${h.url591?`<a href="${h.url591}" target="_blank" style="color:var(--accent)">591🔗</a>`:''}
       </div>
       <div style="margin-top:6px;font-size:.75rem;color:var(--ink2)">
-        必要條件 ${h.mustCount}/${MUST_ITEMS.length} ✅　加分 ${h.bonusCount}/${BONUS_ITEMS.length} ⭐
+        必要條件 ${h.mustCount}/${MUST_ITEMS.length} ✅ 加分 ${h.bonusCount}/${BONUS_ITEMS.length} ⭐
       </div>
       <span class="ctag ${tc}">${tl}</span>
       <div class="sbar"><div class="sfill" style="width:${pct}%"></div></div>
-      <div class="slbl">評分 ${h.total}/25　必要條件達成 ${mustPct}%</div>
+      <div class="slbl">評分 ${h.total}/25 必要條件達成 ${mustPct}%</div>
       <div class="brow" style="margin-top:9px">
         <button class="btn btns" style="font-size:.74rem;padding:5px 11px" onclick="editHouse('${h.id}')">✏️ 編輯</button>
       </div>`;
@@ -1354,7 +1351,7 @@ function renderSchedule(){
   });
 }
 
-// ── OVERVIEW ──
+// ── OVERVIEW (Google Maps 結合) ──
 function renderOverview(){
   // stats
   const stats=document.getElementById('overview-stats');
@@ -1382,17 +1379,7 @@ function renderOverview(){
   activeWatches.forEach(w=>{
     const myScheds=schedules.filter(s=>s.hid===w.id).sort((a,b)=>a.date>b.date?1:-1);
     const nextSch=myScheds.find(s=>s.date>=new Date().toISOString().slice(0,10));
-    const gmapQ=encodeURIComponent((w.addr||w.name)+' 台中市');
-    const nearbyLinks=[
-      ['🏥 醫院','hospital near '+gmapQ],
-      ['💪 健身房','gym near '+gmapQ],
-      ['🏪 便利商店','convenience store near '+gmapQ],
-      ['🛒 全聯/家樂福','supermarket near '+gmapQ],
-      ['🌙 夜市/傳統市場','night market near '+gmapQ],
-      ['🚌 公車站','bus stop near '+gmapQ],
-      ['🚲 UBike','youbike near '+gmapQ],
-      ['🅿️ 停車場','parking near '+gmapQ],
-    ];
+    
     const row=document.createElement('div');
     row.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)';
     row.innerHTML=`
@@ -1409,41 +1396,124 @@ function renderOverview(){
         </div>
       </div>
       ${nextSch?`<div style="background:#EAF2EF;border-radius:8px;padding:7px 11px;font-size:.78rem;color:var(--accent);font-weight:600;margin-bottom:10px">📅 下次看房：${nextSch.date.replace(/-/g,'/')} ${nextSch.time||''}${nextSch.note?' — '+nextSch.note:''}</div>`:'<div style="background:#FFF8E7;border-radius:8px;padding:7px 11px;font-size:.78rem;color:#856404;margin-bottom:10px">📅 尚未安排看房行程</div>'}
-      <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:6px">🗺 查附近機能（Google Maps）</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px">
-        ${nearbyLinks.map(([lb,q])=>`<a href="https://www.google.com/maps/search/${encodeURIComponent(q)}" target="_blank" style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.72rem;font-weight:600;color:var(--ink);text-decoration:none;transition:all .15s">${lb}</a>`).join('')}
-      </div>`;
+      <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-top:6px">👉 啟動上方地圖，點擊房子即可查看周邊機能</div>`;
     ol.appendChild(row);
   });
 }
 
-// ── Map placeholder ──
+// ── Map 與周邊機能核心功能 ──
 function activateMap(){
   const key=document.getElementById('maps-api-key').value.trim();
   if(!key){alert('請輸入 Google Maps API Key');return}
-  // Load Maps JS API
+  
+  // 載入 Google Maps JavaScript API (包含 places 庫)
   const script=document.createElement('script');
   script.src=`https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initMap`;
-  script.async=true;document.head.appendChild(script);
+  script.async=true;
+  document.head.appendChild(script);
+  
   window.initMap=function(){
     document.getElementById('map-container').style.display='block';
     document.querySelector('#maps-api-key').closest('div').style.display='none';
+    
+    // 初始化地圖，設定在台中市中心
     const map=new google.maps.Map(document.getElementById('map-container'),{
-      center:{lat:24.1477,lng:120.6736},zoom:14,
-      mapTypeControl:false,streetViewControl:false
+      center:{lat:24.1477,lng:120.6736},
+      zoom:14, 
+      mapTypeControl:false,
+      streetViewControl:false
     });
+    
     const svc=new google.maps.places.PlacesService(map);
-    const types=['hospital','gym','convenience_store','supermarket','bus_station','parking'];
-    watches.filter(w=>w.addr&&w.status!=='offline').forEach((w,i)=>{
+    const infowindow = new google.maps.InfoWindow();
+    let nearbyMarkers = []; 
+
+    // 清空前一次搜尋的周邊標記
+    function clearNearbyMarkers() {
+      nearbyMarkers.forEach(m => m.setMap(null));
+      nearbyMarkers = [];
+    }
+
+    // 搜尋指定房子周邊機能的函式
+    function searchAroundHouse(housePos) {
+      clearNearbyMarkers();
+      
+      const types = ['hospital', 'gym', 'convenience_store', 'supermarket', 'bus_station', 'parking'];
+      
+      types.forEach(typeKey => {
+        svc.nearbySearch({
+          location: housePos,
+          radius: 800, // 搜尋方圓 800 公尺
+          type: [typeKey]
+        }, (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            results.forEach(place => {
+              const pm = new google.maps.Marker({
+                map: map,
+                position: place.geometry.location,
+                title: place.name
+              });
+
+              pm.addListener('click', () => {
+                let content = `<div style="font-family:sans-serif; padding:5px; font-size: 14px;"><b>📍 ${place.name}</b>`;
+                if(place.rating) content += `<br>評分：${place.rating} ⭐`;
+                
+                // 公車點擊跳轉 Google Maps
+                if(typeKey === 'bus_station' || typeKey === 'transit_station') {
+                  const gMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}`;
+                  content += `<br><a href="${gMapsUrl}" target="_blank" style="color:#007bff;font-weight:bold;display:inline-block;margin-top:8px;">🚌 點我連結 Google Map 看公車</a>`;
+                }
+                content += `</div>`;
+                
+                infowindow.setContent(content);
+                infowindow.open(map, pm);
+              });
+              
+              nearbyMarkers.push(pm);
+            });
+          }
+        });
+      });
+    }
+
+    // 掃描收藏清單，將房子標記到地圖上
+    const activeWatches = watches.filter(w=>w.addr&&w.status!=='offline');
+    activeWatches.forEach((w,i)=>{
       const gc=new google.maps.Geocoder();
+      // 在地址後加上台中市以提高解析準確度
       gc.geocode({address:w.addr+' 台中市'},res=>{
         if(!res||!res[0])return;
         const pos=res[0].geometry.location;
-        const marker=new google.maps.Marker({map,position:pos,title:w.name,
-          icon:{url:'http://maps.google.com/mapfiles/ms/icons/red-dot.png'}});
-        const iw=new google.maps.InfoWindow({content:`<b>${w.name}</b><br>${w.addr}${w.rent?'<br>NT$'+w.rent.toLocaleString()+'/月':''}`});
-        marker.addListener('click',()=>iw.open(map,marker));
-        if(i===0)map.setCenter(pos);
+        
+        // 建立房子標記 (使用橘色 Pin 針)
+        const marker=new google.maps.Marker({
+          map, 
+          position:pos, 
+          title:w.name,
+          icon:{url:'http://maps.google.com/mapfiles/ms/icons/red-dot.png'}
+        });
+        
+        marker.addListener('click',()=>{
+          const houseInfo = `
+            <div style="font-family:sans-serif; line-height:1.5; padding:5px; font-size:14px; max-width: 250px;">
+              <h4 style="margin:0 0 5px 0; color:#d9534f;">🏠 ${w.name}</h4>
+              <b>地址：</b>${w.addr}
+              ${w.rent ? `<br><b>租金：</b>NT$ ${w.rent.toLocaleString()} /月` : ''}
+              <hr style="margin:8px 0; border:0; border-top:1px solid #eee;">
+              <p style="margin:0; color:#666; font-size:12px;">💡 系統已自動載入周邊 800m 機能，請縮放地圖查看周邊出現的紅色小圖標。</p>
+            </div>
+          `;
+          infowindow.setContent(houseInfo);
+          infowindow.open(map,marker);
+          
+          // 點擊房子時，自動帶出該房子周邊的機能
+          searchAroundHouse(pos);
+        });
+        
+        // 預設將地圖中心移到第一間房子的位置
+        if(i===0) {
+          map.setCenter(pos);
+        }
       });
     });
   };
