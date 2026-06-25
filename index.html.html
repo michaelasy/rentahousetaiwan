@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏠 台中租屋評比工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F7F5F0;--surface:#fff;--surface2:#F0EDE6;--ink:#1A1A1A;--ink2:#666;
+  --accent:#3D6B5E;--accent2:#6BAA96;--accent3:#E8A87C;--accent4:#C05C5C;
+  --border:#E0DBD2;--tag-bg:#EAF2EF;--r:12px;--sh:0 2px 12px rgba(0,0,0,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding-bottom:80px}
+/* header */
+header{background:var(--accent);color:#fff;padding:20px 28px;position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(61,107,94,.35)}
+header h1{font-size:1.1rem;font-weight:700;letter-spacing:.04em}
+header small{font-size:.75rem;opacity:.75}
+/* tabs */
+.tabs{display:flex;background:var(--surface2);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto;gap:0;position:sticky;top:61px;z-index:100}
+.tab-btn{padding:13px 18px;border:none;background:transparent;font-family:inherit;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-btn:hover:not(.active){color:var(--ink);background:rgba(0,0,0,.04)}
+/* content */
+.tab-pane{display:none;padding:22px;max-width:920px;margin:0 auto}
+.tab-pane.active{display:block}
+/* cards */
+.house-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;margin-bottom:18px}
+.hcard{background:var(--surface);border-radius:var(--r);border:2px solid var(--border);padding:16px;cursor:pointer;transition:all .18s;position:relative}
+.hcard:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:var(--sh)}
+.hcard .cn{font-weight:700;font-size:.98rem;margin-bottom:3px;padding-right:22px}
+.hcard .cp{font-family:'DM Mono',monospace;color:var(--accent);font-size:1.05rem;font-weight:500}
+.hcard .ctag{display:inline-block;font-size:.68rem;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:700}
+.tw{background:#D4EDDA;color:#1A6B30}.tm{background:#FFF3CD;color:#856404}.tn{background:#F8D7DA;color:#721C24}.t0{background:var(--surface2);color:var(--ink2)}
+.sbar{margin-top:9px;height:5px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.sfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s}
+.slbl{font-size:.7rem;color:var(--ink2);margin-top:3px}
+.del{position:absolute;top:9px;right:10px;background:none;border:none;font-size:.95rem;color:#ccc;cursor:pointer;line-height:1}
+.del:hover{color:var(--accent4)}
+/* form */
+.fcard{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:22px;margin-bottom:18px;box-shadow:var(--sh)}
+.fcard h2{font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:13px}
+.f label{font-size:.74rem;font-weight:700;color:var(--ink2);letter-spacing:.03em}
+.f input,.f select,.f textarea{border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:.88rem;color:var(--ink);background:var(--bg);outline:none;transition:border .2s}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--accent2)}
+.f textarea{resize:vertical;min-height:65px}
+/* must/bonus badge */
+.req-badge{display:inline-block;font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.must{background:#FFE5E5;color:#B00}
+.bonus{background:#FFF3CD;color:#856404}
+/* check items */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ci{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;font-size:.81rem;position:relative}
+.ci.must-item{border-left:3px solid #C05C5C}
+.ci.bonus-item{border-left:3px solid var(--accent3)}
+.ci.checked{background:var(--tag-bg);border-color:var(--accent2);color:var(--accent);font-weight:600}
+.ci input{display:none}
+/* score */
+.sr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.sr:last-child{border-bottom:none}
+.sl{flex:1;font-size:.86rem;font-weight:500}
+.ss{display:flex;gap:3px}
+.sb{background:none;border:none;font-size:1.25rem;cursor:pointer;transition:transform .1s;color:#DDD;line-height:1;padding:2px}
+.sb.on{color:#F4A620}
+.sb:hover{transform:scale(1.2)}
+.sn{font-family:'DM Mono',monospace;font-size:.82rem;width:22px;text-align:right;color:var(--ink2);font-weight:500}
+/* amenity */
+.ar{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.ar:last-child{border-bottom:none}
+.al{font-size:.85rem;font-weight:500}
+.al .must{margin-left:4px}
+.pb{display:flex;gap:3px}
+.pbt{padding:4px 9px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.7rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
+.pbt.near{background:#D4EDDA;border-color:#1A6B30;color:#1A6B30}
+.pbt.mid{background:#FFF3CD;border-color:#856404;color:#856404}
+.pbt.far{background:#F8D7DA;border-color:#721C24;color:#721C24}
+/* 591 section */
+.link591{display:flex;align-items:center;gap:10px;background:#EAF2EF;border:1.5px solid var(--accent2);border-radius:10px;padding:12px 14px;margin-top:10px;text-decoration:none;color:var(--accent);font-weight:700;font-size:.88rem;transition:all .2s}
+.link591:hover{background:#D0E8DF}
+.link591 .icon591{font-size:1.4rem}
+/* landlord */
+.ll-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* buttons */
+.btn{padding:9px 20px;border-radius:8px;border:none;font-family:inherit;font-size:.86rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btnp{background:var(--accent);color:#fff}.btnp:hover{background:#305749}
+.btns{background:var(--surface2);color:var(--ink);border:1.5px solid var(--border)}.btns:hover{background:var(--border)}
+.brow{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+/* charts */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.cc{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px;box-shadow:var(--sh)}
+.cc h3{font-size:.82rem;font-weight:700;color:var(--ink2);margin-bottom:12px;letter-spacing:.04em}
+.cc canvas{max-height:230px}
+.cfull{grid-column:1/-1}
+/* rank table */
+.rt{width:100%;border-collapse:collapse}
+.rt th{font-size:.72rem;font-weight:700;color:var(--ink2);padding:7px 11px;text-align:left;border-bottom:2px solid var(--border);letter-spacing:.04em}
+.rt td{padding:9px 11px;border-bottom:1px solid var(--border);font-size:.85rem}
+.rt tr:hover td{background:var(--surface2)}
+/* subsidy section */
+.sub-card{background:linear-gradient(135deg,#EAF2EF,#F7F5F0);border:1px solid var(--accent2);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.sub-card h2{font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.sub-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.snum{background:var(--accent);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:1px}
+.sbody strong{font-size:.87rem;display:block;margin-bottom:3px}
+.sbody p{font-size:.79rem;color:var(--ink2);line-height:1.65}
+.tip{background:#fff;border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 13px;margin:10px 0;font-size:.79rem;line-height:1.7;color:var(--ink2)}
+.warn{background:#FFF8E7;border-left:3px solid var(--accent3);border-radius:0 8px 8px 0;padding:10px 13px;margin:10px 0;font-size:.79rem;line-height:1.7;color:#7A5500}
+.sub-amount{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.sa{background:#fff;border-radius:9px;padding:12px 14px;border:1px solid var(--border);text-align:center}
+.sa .amt{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--accent)}
+.sa .lbl{font-size:.72rem;color:var(--ink2);margin-top:2px}
+.sub-link{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#fff;padding:9px 16px;border-radius:8px;text-decoration:none;font-size:.83rem;font-weight:700;margin-top:8px;transition:all .2s}
+.sub-link:hover{background:#305749}
+/* empty */
+.empty{text-align:center;padding:55px 20px;color:var(--ink2);font-size:.88rem;line-height:1.9}
+.empty .big{font-size:2.8rem;display:block;margin-bottom:14px}
+@media(max-width:600px){
+  .cgrid,.frow,.ll-grid,.cg,.sub-amount{grid-template-columns:1fr}
+  .tab-pane{padding:14px}
+  header{padding:15px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div><h1>🏠 台中租屋評比工具</h1><small id="hcount">目前 0 間房子</small></div>
+  <span style="font-size:1.3rem">📊</span>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="go('list',this)">🏘 所有房子</button>
+  <button class="tab-btn" onclick="go('add',this)">➕ 新增/編輯</button>
+  <button class="tab-btn" onclick="go('charts',this)">📊 圖表比較</button>
+  <button class="tab-btn" onclick="go('subsidy',this)">💰 租屋補助</button>
+  <button class="tab-btn" onclick="go('watch',this)">👀 591收藏清單</button>
+  <button class="tab-btn" onclick="go('contract',this)">📄 合約檢查</button>
+  <button class="tab-btn" onclick="go('moving',this)">📦 搬家清單</button>
+  <button class="tab-btn" onclick="go('pk',this)">⚔️ 房子PK</button>
+</div>
+
+<!-- ══ LIST ══ -->
+<div id="tab-list" class="tab-pane active">
+  <div id="hgrid" class="house-grid"></div>
+  <div id="list-empty" class="empty" style="display:none">
+    <span class="big">🏠</span>還沒有任何房子<br>點「新增/編輯」開始記錄看過的房間
+  </div>
+  <button class="btn btnp" onclick="go('add',document.querySelectorAll('.tab-btn')[1])">＋ 新增一間房子</button>
+</div>
+
+<!-- ══ ADD/EDIT ══ -->
+<div id="tab-add" class="tab-pane">
+
+  <!-- 基本資訊 -->
+  <div class="fcard">
+    <h2>📝 基本資訊</h2>
+    <div class="f"><label>房子名稱</label><input id="fn" placeholder="例：北屯電梯套房、勤美附近小套房"></div>
+    <div class="frow">
+      <div class="f"><label>月租金（元）</label><input type="number" id="frent" placeholder="8000"></div>
+      <div class="f"><label>押金（月數）</label><input type="number" id="fdep" placeholder="2"></div>
+    </div>
+    <div class="frow">
+      <div class="f"><label>坪數</label><input type="number" id="fsz" placeholder="8"></div>
+      <div class="f"><label>到公司（分鐘）</label><input type="number" id="fcom" placeholder="15"></div>
+    </div>
+    <div class="f"><label>地址</label><input id="faddr" placeholder="台中市北區..."></div>
+    <!-- 591 link -->
+    <div class="f">
+      <label>591 房源連結</label>
+      <input id="f591" placeholder="貼上 591 的房源網址 https://...">
+    </div>
+    <a id="open591" href="#" target="_blank" class="link591" style="display:none">
+      <span class="icon591">🔗</span><span>開啟 591 房源頁面</span>
+    </a>
+  </div>
+
+  <!-- 房東聯絡資訊 -->
+  <div class="fcard">
+    <h2>👤 房東聯絡資訊</h2>
+    <div class="ll-grid">
+      <div class="f"><label>房東姓名</label><input id="lname" placeholder="王先生 / 陳小姐"></div>
+      <div class="f"><label>電話</label><input id="lphone" placeholder="0912-345-678"></div>
+      <div class="f"><label>LINE ID</label><input id="lline" placeholder="@landlord"></div>
+      <div class="f"><label>看房預約日期</label><input type="date" id="ldate"></div>
+    </div>
+    <div class="f"><label>備註（房東說的特別事項）</label><textarea id="lnote" placeholder="例：可以開伙、不養寵物、每月5號收租..."></textarea></div>
+  </div>
+
+  <!-- 必要條件 -->
+  <div class="fcard">
+    <h2>✅ 必要條件 <span class="req-badge must">必須有</span></h2>
+    <div class="cg" id="must-grid"></div>
+  </div>
+
+  <!-- 加分條件 -->
+  <div class="fcard">
+    <h2>⭐ 加分條件 <span class="req-badge bonus">有更好</span></h2>
+    <div class="cg" id="bonus-grid"></div>
+  </div>
+
+  <!-- 設備清單 -->
+  <div class="fcard">
+    <h2>🛋 設備清單</h2>
+    <div class="cg" id="equip-grid"></div>
+  </div>
+
+  <!-- 現場費用對比 -->
+  <div class="fcard">
+    <h2>💸 現場費用對比</h2>
+    <div class="frow">
+      <div class="f">
+        <label>電費每度（元）</label>
+        <input type="number" id="felec-rate" placeholder="台電約4～5元，獨立計費常見6元">
+      </div>
+      <div class="f">
+        <label>每月預估電費（元）</label>
+        <input type="number" id="felec-est" placeholder="夏天冷氣開整天約800-1500">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="f">
+        <label>管理費（元/月）</label>
+        <input type="number" id="fmgmt" placeholder="0">
+      </div>
+      <div class="f">
+        <label>網路費（元/月，不含則填0）</label>
+        <input type="number" id="fnet-fee" placeholder="0">
+      </div>
+    </div>
+    <!-- 自動計算每月總支出 -->
+    <div style="background:linear-gradient(135deg,#EAF2EF,#F7F5F0);border-radius:10px;padding:14px 16px;margin-top:4px">
+      <div style="font-size:.78rem;font-weight:700;color:var(--ink2);margin-bottom:10px">📊 每月實際總支出試算</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+          <div id="calc-total" style="font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--accent)">—</div>
+          <div style="font-size:.7rem;color:var(--ink2);margin-top:2px">每月總支出</div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+          <div id="calc-year" style="font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--accent3)">—</div>
+          <div style="font-size:.7rem;color:var(--ink2);margin-top:2px">年度總支出</div>
+        </div>
+      </div>
+    </div>
+    <!-- 特殊條件 -->
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:700;color:var(--ink2);margin-bottom:8px">🔖 特殊條件確認</div>
+      <div class="cg" id="special-grid"></div>
+    </div>
+  </div>
+
+  <!-- 屋況現場檢查清單 -->
+  <div class="fcard">
+    <h2>🔍 現場屋況檢查清單</h2>
+    <div style="font-size:.75rem;color:var(--ink2);margin-bottom:12px">看房當下逐項確認，打勾 = OK，紅色 = 有問題</div>
+    <div id="inspect-list"></div>
+  </div>
+
+  <!-- 退租自保照片 -->
+  <div class="fcard">
+    <h2>📷 退租自保照片</h2>
+    <div style="background:#FFF8E7;border-left:3px solid var(--accent3);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:14px;font-size:.78rem;line-height:1.7;color:#7A5500">
+      ⚠️ 入住當天一定要拍！萬一退租被扣押金，這些照片就是你的證據。
+    </div>
+    <!-- 入住照片 -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:8px">📸 入住照片（入住當天拍）</div>
+      <div class="cg" style="margin-bottom:8px" id="movein-checklist"></div>
+      <div class="f" style="margin-top:8px">
+        <label>上傳入住照片</label>
+        <input type="file" id="movein-files" accept="image/*" multiple onchange="handleMovePhotos(this,'in')">
+        <div id="movein-photo-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+      </div>
+      <div class="f">
+        <label>或貼入 Google 相簿連結</label>
+        <input id="movein-url" placeholder="https://photos.google.com/...">
+      </div>
+    </div>
+    <!-- 退租照片 -->
+    <div>
+      <div style="font-size:.82rem;font-weight:700;color:var(--accent4);margin-bottom:8px">📸 退租照片（退租前一天拍，與入住對比）</div>
+      <div class="f">
+        <label>上傳退租照片</label>
+        <input type="file" id="moveout-files" accept="image/*" multiple onchange="handleMovePhotos(this,'out')">
+        <div id="moveout-photo-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+      </div>
+      <div class="f">
+        <label>或貼入 Google 相簿連結</label>
+        <input id="moveout-url" placeholder="https://photos.google.com/...">
+      </div>
+    </div>
+  </div>
+
+  <!-- 附近機能 -->
+  <div class="fcard">
+    <h2>📍 附近機能（步行距離）</h2>
+    <div id="amen-list"></div>
+  </div>
+
+  <!-- 評分 -->
+  <div class="fcard">
+    <h2>⭐ 評分（點星星）</h2>
+    <div id="score-sec"></div>
+  </div>
+
+  <!-- 整體印象 -->
+  <div class="fcard">
+    <h2>💬 整體印象</h2>
+    <div class="f"><label>看完房的感受、優缺點</label><textarea id="fnote" placeholder="寫下你對這間房子的感受..."></textarea></div>
+    <div class="f"><label>租不租？</label>
+      <select id="fdec">
+        <option value="">還沒決定</option>
+        <option value="want">✅ 想租</option>
+        <option value="maybe">🤔 再想想</option>
+        <option value="no">⛔ 不考慮</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="brow">
+    <button class="btn btnp" onclick="saveHouse()">💾 儲存</button>
+    <button class="btn btns" onclick="resetForm()">🔄 清除重填</button>
+  </div>
+</div>
+
+<!-- ══ CHARTS ══ -->
+<div id="tab-charts" class="tab-pane">
+  <div id="charts-empty" class="empty" style="display:none"><span class="big">📊</span>需要至少 1 間房子才能顯示圖表</div>
+  <div id="charts-wrap">
+    <div class="cgrid">
+      <div class="cc"><h3>💰 月租金比較</h3><canvas id="crent"></canvas></div>
+      <div class="cc"><h3>⭐ 總評分圓餅</h3><canvas id="cscore"></canvas></div>
+      <div class="cc cfull"><h3>🎯 各面向雷達（最高分前3）</h3><canvas id="cradar"></canvas></div>
+      <div class="cc cfull"><h3>📍 附近機能分析（近3分 中2分 遠1分）</h3><canvas id="camen"></canvas></div>
+      <div class="cc cfull"><h3>✅ 必要條件達成率</h3><canvas id="cmust"></canvas></div>
+    </div>
+    <div class="fcard"><h2>🏆 綜合排名</h2><table class="rt" id="rtbl"></table></div>
+  </div>
+</div>
+
+<!-- ══ SUBSIDY ══ -->
+<div id="tab-subsidy" class="tab-pane">
+
+  <div class="sub-card">
+    <h2>💰 2026 台中租屋補助懶人包</h2>
+
+    <div class="sub-amount">
+      <div class="sa"><div class="amt">$2,880</div><div class="lbl">台中市一般區每月補貼<br>（第三級）</div></div>
+      <div class="sa"><div class="amt">$4,000</div><div class="lbl">台中市核心區每月補貼<br>（第二級）</div></div>
+      <div class="sa"><div class="amt">75萬戶</div><div class="lbl">2026年全台補助名額</div></div>
+      <div class="sa"><div class="amt">最高×3</div><div class="lbl">育兒家庭加碼倍數</div></div>
+    </div>
+
+    <div class="warn">⚠️ 2026年新制：租屋補助只限「合法住宅」（具建物登記或房屋稅籍）。頂樓加蓋、違建無法申請。</div>
+
+    <div class="tip">📌 申請時間：2026/1/1 09:00 ～ 2026/12/31 17:00，隨到隨辦，不需排隊。</div>
+  </div>
+
+  <!-- 資格 -->
+  <div class="sub-card">
+    <h2>📋 申請資格確認</h2>
+
+    <div class="sub-step">
+      <div class="snum">①</div>
+      <div class="sbody">
+        <strong>身分條件</strong>
+        <p>中華民國國民、在台設有戶籍、年滿18歲</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">②</div>
+      <div class="sbody">
+        <strong>所得條件（台中市）</strong>
+        <p>家庭成員每人每月平均所得 低於 <strong>NT$ 40,193 元</strong>（最低生活費2.5倍）</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">③</div>
+      <div class="sbody">
+        <strong>無自有房屋</strong>
+        <p>你及家庭成員（配偶、未成年子女）均無自有房屋。父母有房不影響你申請。</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">④</div>
+      <div class="sbody">
+        <strong>租合法住宅</strong>
+        <p>2026年起，所租房子必須是合法建物（有建物登記或房屋稅籍）。</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">⑤</div>
+      <div class="sbody">
+        <strong>補助分級（你最可能是第三級）</strong>
+        <p>第三級：單身、未滿40歲 → 台中市每月 <strong>$2,880元</strong><br>第二級：其他一般戶 → 台中市核心區每月 <strong>$4,000元</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 申請流程 -->
+  <div class="sub-card">
+    <h2>🚀 線上申請步驟（最推薦）</h2>
+
+    <div class="sub-step">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <strong>先確認資格</strong>
+        <p>到內政部不動產資訊平台試算資格：<br>pip.moi.gov.tw → 300億元租金補貼 → 資格試算</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <strong>準備文件</strong>
+        <p>✦ 租賃契約書（最重要）<br>✦ 身分證正反面<br>✦ 健保卡<br>✦ 銀行帳戶存摺封面（撥款用）<br>✦ 不需要房東同意書</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <strong>線上申請</strong>
+        <p>到台中市住宅補貼申請系統（cahas.taichung.gov.tw），用身分證字號 + 健保卡號登入並填寫資料送件。</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <strong>等待審查</strong>
+        <p>約 2～3 個月內審查完畢。核定後補貼追溯自申請日起計算，不會因為審查慢而少領。</p>
+      </div>
+    </div>
+    <div class="sub-step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <strong>撥款入帳</strong>
+        <p>核定通過後每月自動撥入你填的銀行帳戶。可至台中市申請系統查詢進度。</p>
+      </div>
+    </div>
+
+    <div class="tip">💡 申請不需要房東同意！如果租約裡有禁止申請補助的條款，依法無效。</div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+      <a class="sub-link" href="https://cahas.taichung.gov.tw/" target="_blank">🏛 台中市申請系統</a>
+      <a class="sub-link" href="https://pip.moi.gov.tw/V3/B/SCRB0102.aspx" target="_blank">🧮 資格試算（內政部）</a>
+    </div>
+    <p style="font-size:.72rem;color:var(--ink2);margin-top:8px">諮詢專線：(02)7729-8003｜週一至週五 08:00–18:00</p>
+  </div>
+
+  <!-- 注意事項 -->
+  <div class="sub-card">
+    <h2>⚠️ 看房時要特別問房東</h2>
+    <div class="tip">
+      ✦ 這間房子有「房屋稅籍」嗎？（合法建物才能申請補助）<br>
+      ✦ 房東是「公益出租人」嗎？（是的話房東有免稅優惠，更願意配合）<br>
+      ✦ 租約上可以寫你的真實姓名＋租金金額嗎？（申請補助時需要這份租約）<br>
+      ✦ 政府絕對不會要求你操作 ATM 或點連結領補助，小心詐騙！
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ WATCH ══ -->
+<div id="tab-watch" class="tab-pane">
+
+  <!-- 時程 banner -->
+  <div style="background:linear-gradient(135deg,#3D6B5E,#6BAA96);color:#fff;border-radius:var(--r);padding:16px 20px;margin-bottom:18px">
+    <div style="font-weight:700;font-size:.95rem;margin-bottom:8px">⏰ 你的租屋時程</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;font-size:.78rem">
+      <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:9px;text-align:center"><div style="font-size:1.1rem;font-weight:700">7/13</div><div style="opacity:.85">開始積極找房</div></div>
+      <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:9px;text-align:center"><div style="font-size:1.1rem;font-weight:700">7/14–20</div><div style="opacity:.85">密集看房週</div></div>
+      <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:9px;text-align:center"><div style="font-size:1.1rem;font-weight:700">7/25</div><div style="opacity:.85">⚠️ 決策截止</div></div>
+      <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:9px;text-align:center"><div style="font-size:1.1rem;font-weight:700">7/28</div><div style="opacity:.85">簽約＋補助</div></div>
+      <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:9px;text-align:center"><div style="font-size:1.1rem;font-weight:700">8月初</div><div style="opacity:.85">🏠 入住！</div></div>
+    </div>
+    <div style="font-size:.7rem;opacity:.7;margin-top:8px">📅 每週一、四晚8點提醒確認591房源</div>
+  </div>
+
+  <!-- sub-tabs -->
+  <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:16px">
+    <button id="wt-list" onclick="wTab('list')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;transition:all .2s">📋 收藏清單</button>
+    <button id="wt-schedule" onclick="wTab('schedule')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);transition:all .2s">📅 看房行程</button>
+    <button id="wt-overview" onclick="wTab('overview')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);transition:all .2s">🗺 總覽</button>
+  </div>
+
+  <!-- ── 收藏清單 ── -->
+  <div id="wpane-list">
+    <!-- 新增/編輯表單 -->
+    <div class="fcard" id="watch-form-card">
+      <h2 id="watch-form-title">🔖 新增591收藏房源</h2>
+      <div class="frow">
+        <div class="f"><label>房源名稱</label><input id="wname" placeholder="例：北屯近公車站套房"></div>
+        <div class="f"><label>月租金（元）</label><input type="number" id="wrent" placeholder="8500"></div>
+      </div>
+      <div class="f"><label>591 網址</label><input id="wurl" placeholder="https://rent.591.com.tw/..."></div>
+      <div class="frow">
+        <div class="f"><label>地址</label><input id="waddr" placeholder="台中市北屯區..."></div>
+        <div class="f"><label>房東電話</label><input id="wphone" placeholder="0912-345-678"></div>
+      </div>
+      <!-- 照片：連結 -->
+      <div class="f">
+        <label>照片連結（Google相簿 / Imgur 等）</label>
+        <input id="wphoto-url" placeholder="https://photos.google.com/...">
+        <button class="btn btns" style="margin-top:5px;font-size:.76rem;padding:4px 10px;width:fit-content" onclick="addPhotoUrl()">＋ 加入連結</button>
+        <div id="wphoto-url-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+      </div>
+      <!-- 照片：上傳 -->
+      <div class="f">
+        <label>上傳照片（本機檔案，僅本次瀏覽器有效）</label>
+        <input type="file" id="wphoto-file" accept="image/*" multiple onchange="handlePhotoFiles(this)">
+        <div id="wphoto-file-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+      </div>
+      <div class="f"><label>備註</label><textarea id="wnote" placeholder="有陽台、近公車、獨立洗衣機..." style="min-height:55px"></textarea></div>
+      <div class="brow">
+        <button class="btn btnp" id="watch-save-btn" onclick="saveWatch()">🔖 加入收藏</button>
+        <button class="btn btns" id="watch-cancel-btn" onclick="cancelWatchEdit()" style="display:none">取消編輯</button>
+      </div>
+    </div>
+
+    <div id="watch-empty" class="empty" style="display:none">
+      <span class="big">👀</span>還沒有收藏房源<br>把591上看到的好房貼上來！
+    </div>
+    <div id="watch-list"></div>
+  </div>
+
+  <!-- ── 看房行程 ── -->
+  <div id="wpane-schedule" style="display:none">
+    <div class="fcard">
+      <h2>📅 新增看房行程</h2>
+      <div class="frow">
+        <div class="f">
+          <label>選擇房子</label>
+          <select id="sch-house">
+            <option value="">請選擇（收藏清單中的房子）</option>
+          </select>
+        </div>
+        <div class="f"><label>看房日期</label><input type="date" id="sch-date"></div>
+      </div>
+      <div class="frow">
+        <div class="f"><label>時間</label><input type="time" id="sch-time" placeholder="14:00"></div>
+        <div class="f"><label>集合地點/備註</label><input id="sch-note" placeholder="例：在大門口等、停車場入口..."></div>
+      </div>
+      <button class="btn btnp" onclick="addSchedule()">＋ 加入行程</button>
+    </div>
+
+    <div id="sch-empty" class="empty" style="display:none">
+      <span class="big">📅</span>還沒有看房行程<br>先在收藏清單加入房子，再來這裡安排時間！
+    </div>
+    <div id="sch-list"></div>
+  </div>
+
+  <!-- ── 總覽 ── -->
+  <div id="wpane-overview" style="display:none">
+    <!-- 地圖預留位置 -->
+    <div class="fcard" style="border:2px dashed var(--accent2)">
+      <h2>🗺 地圖（等待 Google Maps API Key）</h2>
+      <div style="background:var(--surface2);border-radius:10px;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink2);gap:12px">
+        <span style="font-size:2.5rem">🗺</span>
+        <div style="text-align:center;font-size:.85rem;line-height:1.7">
+          地圖功能準備好了，等你拿到 Google Maps API Key<br>
+          只要填入 key 就會自動顯示所有房子位置＋附近機能
+        </div>
+        <div style="font-size:.75rem;color:var(--accent);font-weight:700">
+          附近機能：醫院・健身房・便利商店・傳統市場・夜市<br>
+          超市・公車站・UBike・停車場
+        </div>
+        <input id="maps-api-key" placeholder="貼上 Google Maps API Key 啟動地圖" style="border:1.5px solid var(--accent2);border-radius:8px;padding:8px 12px;font-size:.82rem;width:80%;max-width:360px;text-align:center;font-family:inherit">
+        <button class="btn btnp" onclick="activateMap()" style="font-size:.82rem;padding:7px 18px">🗺 啟動地圖</button>
+      </div>
+      <div id="map-container" style="display:none;border-radius:10px;overflow:hidden;height:400px;margin-top:12px"></div>
+    </div>
+
+    <!-- 現在在看哪些房 -->
+    <div class="fcard">
+      <h2>🏠 目前在看的房子</h2>
+      <div id="overview-list"></div>
+    </div>
+
+    <!-- 統計 -->
+    <div id="overview-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px"></div>
+  </div>
+
+</div>
+
+<!-- ══ CONTRACT ══ -->
+<div id="tab-contract" class="tab-pane">
+  <div class="fcard">
+    <h2>📄 合約條款檢查清單</h2>
+    <div style="background:#FFF8E7;border-left:3px solid var(--accent3);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:16px;font-size:.78rem;line-height:1.7;color:#7A5500">
+      ⚠️ 簽約前逐條確認！有問題的條款要先跟房東談，不能改就考慮換一間。
+    </div>
+    <div id="contract-list"></div>
+    <div class="f" style="margin-top:16px"><label>其他備注（特殊條款記錄）</label><textarea id="contract-note" placeholder="例：房東說可以養一隻小狗，但合約上沒寫，要補充條款..."></textarea></div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn btnp" onclick="saveContract()">💾 儲存檢查結果</button>
+      <button class="btn btns" onclick="resetContract()">🔄 重置</button>
+    </div>
+  </div>
+  <div class="fcard" id="contract-result" style="display:none">
+    <h2>📊 合約風險評估</h2>
+    <div id="contract-summary"></div>
+  </div>
+</div>
+
+<!-- ══ MOVING ══ -->
+<div id="tab-moving" class="tab-pane">
+  <div style="background:linear-gradient(135deg,#3D6B5E,#6BAA96);color:#fff;border-radius:var(--r);padding:16px 20px;margin-bottom:18px">
+    <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">📦 搬家倒數</div>
+    <div id="moving-countdown" style="font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700"></div>
+    <div style="font-size:.75rem;opacity:.75;margin-top:4px">目標入住日：8月1日</div>
+  </div>
+  <div id="moving-sections"></div>
+</div>
+
+<!-- ══ PK ══ -->
+<div id="tab-pk" class="tab-pane">
+  <div class="fcard">
+    <h2>⚔️ 房子 PK 對決</h2>
+    <div style="font-size:.78rem;color:var(--ink2);margin-bottom:14px">選兩間房子直接左右並排比較所有數據</div>
+    <div class="frow">
+      <div class="f"><label>房子 A</label><select id="pk-a"><option value="">請選擇</option></select></div>
+      <div class="f"><label>房子 B</label><select id="pk-b"><option value="">請選擇</option></select></div>
+    </div>
+    <button class="btn btnp" onclick="runPK()">⚔️ 開始對決！</button>
+  </div>
+  <div id="pk-result" style="display:none"></div>
+</div>
+
+<script>
+// ══ DATA ══
+const MUST_ITEMS=[
+  {k:'landlord_direct', l:'房東自己租（非仲介）'},
+  {k:'washer_own',      l:'獨立洗衣機'},
+  {k:'balcony',        l:'陽台'},
+  {k:'market_walk',    l:'全聯/家樂福/711 步行10-15分'},
+  {k:'bus_10',         l:'公車站 步行10分鐘內'},
+  {k:'water_dispenser',l:'公用飲水機'},
+  {k:'net_included',   l:'含網路費'},
+];
+const BONUS_ITEMS=[
+  {k:'bike_park',      l:'子母車/腳踏車位'},
+  {k:'kitchen',        l:'小廚房'},
+  {k:'subsidy_ok',     l:'可申請租屋補助'},
+  {k:'door_access',    l:'大門磁扣管理'},
+  {k:'taipower',       l:'依台電收費'},
+];
+const EQUIP_ITEMS=['冷氣','冰箱','洗衣機（獨立）','熱水器','瓦斯/電磁爐','床架','床墊','衣櫃','書桌','電視','冷熱水飲水機'];
+const AMENITIES=[
+  {k:'cvs',   l:'便利商店（7-11/全家）', must:true},
+  {k:'super',  l:'超市（全聯/家樂福）',   must:true},
+  {k:'bus',    l:'公車站',               must:true},
+  {k:'rest',   l:'餐廳/小吃'},
+  {k:'night',  l:'夜市'},
+  {k:'post',   l:'郵局'},
+  {k:'bank',   l:'銀行/ATM'},
+  {k:'laundry',l:'自助洗衣'},
+];
+const SCORES=[
+  {k:'house',   l:'房屋狀況'},
+  {k:'amenity', l:'附近機能'},
+  {k:'traffic', l:'交通便利'},
+  {k:'safety',  l:'安全性'},
+  {k:'cp',      l:'CP值'},
+];
+const PAL=['#3D6B5E','#6BAA96','#E8A87C','#C05C5C','#7B9EBE','#B5838D','#4A7856','#D4A017'];
+
+const SPECIAL_ITEMS=[
+  {k:'cooking',   l:'可以開伙'},
+  {k:'pet',       l:'可以養寵物'},
+  {k:'tax',       l:'可報稅/申請補助'},
+  {k:'contract',  l:'可簽正式租約'},
+  {k:'receipt',   l:'房東開收據'},
+  {k:'sublease',  l:'可轉租'},
+];
+const INSPECT_ITEMS=[
+  {k:'water',    l:'水壓正常（開水龍頭測）',    tip:'水流細或忽大忽小 = 水壓問題'},
+  {k:'leak',     l:'無漏水/壁癌痕跡',           tip:'檢查天花板角落、窗邊、浴室'},
+  {k:'signal',   l:'手機訊號幾格',               tip:'進房間確認，地下室常沒訊號', input:true, inputLabel:'格數'},
+  {k:'ac',       l:'冷氣為變頻（非定頻）',       tip:'變頻省電約30-50%，問房東或看銘板'},
+  {k:'drain',    l:'排水順暢（浴室/廚房）',      tip:'開水測試，積水代表管路問題'},
+  {k:'window',   l:'窗戶可正常開關',             tip:'開關順暢，有紗窗更好'},
+  {k:'door',     l:'門鎖安全正常',               tip:'試鑰匙，確認無鬆動'},
+  {k:'socket',   l:'插座數量夠用',               tip:'數一下每個空間的插座'},
+  {k:'noise',    l:'環境安靜（沒有噪音）',        tip:'靜下來聽聽周圍，白天/夜晚不同'},
+  {k:'sun',      l:'採光良好',                   tip:'白天有無自然採光，窗戶朝向'},
+  {k:'vent',     l:'通風正常無異味',              tip:'關門後聞看看，廁所異味常見'},
+  {k:'pest',     l:'無蟑螂/蟲害跡象',            tip:'看廚房角落、水槽下方'},
+];
+const MOVEIN_CHECK=['牆壁現況','地板現況','天花板現況','窗戶現況','門鎖現況','廁所現況','廚房現況','家具損傷','冷氣現況','熱水器現況'];
+
+
+let editId=null, scoreS={}, equipS={}, mustS={}, bonusS={}, amenS={}, specialS={}, inspectS={}, inspectNotes={};
+let moveInPhotos={files:[],url:''}, moveOutPhotos={files:[],url:''};
+let houses=JSON.parse(localStorage.getItem('tc25')||'[]');
+let charts={};
+
+function save(){localStorage.setItem('tc25',JSON.stringify(houses))}
+
+// ── COST CALCULATOR ──
+function calcCost(){
+  const rent=+document.getElementById('frent').value||0;
+  const elec=+document.getElementById('felec-est').value||0;
+  const mgmt=+document.getElementById('fmgmt').value||0;
+  const net=+document.getElementById('fnet-fee').value||0;
+  const total=rent+elec+mgmt+net;
+  const ct=document.getElementById('calc-total');
+  const cy=document.getElementById('calc-year');
+  if(ct) ct.textContent=total?'NT$ '+total.toLocaleString():'—';
+  if(cy) cy.textContent=total?'NT$ '+(total*12).toLocaleString():'—';
+}
+function bindCostCalc(){
+  ['frent','felec-est','fmgmt','fnet-fee'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('input',calcCost);
+  });
+}
+
+// ── SPECIAL ──
+function buildSpecial(){
+  const g=document.getElementById('special-grid');g.innerHTML='';
+  SPECIAL_ITEMS.forEach(({k,l})=>{
+    specialS[k]=false;
+    const el=document.createElement('div');el.className='ci';el.id='sp-'+k;
+    el.innerHTML=`<span class="ck">◻</span>${l}`;
+    el.onclick=()=>{specialS[k]=!specialS[k];el.classList.toggle('checked',specialS[k]);el.querySelector('.ck').textContent=specialS[k]?'✅':'◻'};
+    g.appendChild(el);
+  });
+}
+function fillSpecial(d){SPECIAL_ITEMS.forEach(({k})=>{specialS[k]=d[k]||false;const el=document.getElementById('sp-'+k);if(el){el.classList.toggle('checked',specialS[k]);el.querySelector('.ck').textContent=specialS[k]?'✅':'◻'}})}
+
+// ── INSPECT ──
+function buildInspect(){
+  const c=document.getElementById('inspect-list');c.innerHTML='';
+  INSPECT_ITEMS.forEach(({k,l,tip,input,inputLabel})=>{
+    inspectS[k]=null; inspectNotes[k]='';
+    const row=document.createElement('div');
+    row.style.cssText='padding:10px 0;border-bottom:1px solid var(--border)';
+    row.innerHTML=`
+      <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px">
+          <div style="font-size:.86rem;font-weight:600">${l}</div>
+          <div style="font-size:.72rem;color:var(--ink2);margin-top:2px">💡 ${tip}</div>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+          ${input?`<input id="inp-${k}" type="text" placeholder="${inputLabel}" style="width:60px;border:1.5px solid var(--border);border-radius:6px;padding:4px 7px;font-size:.8rem;font-family:inherit" oninput="inspectNotes['${k}']=this.value">`:''}
+          <button id="ins-ok-${k}" onclick="setInspect('${k}','ok')" style="padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit">✅ OK</button>
+          <button id="ins-ng-${k}" onclick="setInspect('${k}','ng')" style="padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit">❌ 有問題</button>
+          <button id="ins-na-${k}" onclick="setInspect('${k}','na')" style="padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit">— 略過</button>
+        </div>
+      </div>`;
+    c.appendChild(row);
+  });
+}
+function setInspect(k,v){
+  inspectS[k]=v;
+  const styles={ok:'background:#D4EDDA;border-color:#1A6B30;color:#1A6B30',ng:'background:#F8D7DA;border-color:#721C24;color:#721C24',na:'background:#EEE;border-color:#999;color:#666'};
+  ['ok','ng','na'].forEach(x=>{
+    const b=document.getElementById(`ins-${x}-${k}`);
+    if(b) b.style.cssText='padding:4px 11px;border-radius:20px;border:1.5px solid;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;'+(x===v?styles[x]:'background:var(--bg);border-color:var(--border);color:var(--ink2)');
+  });
+}
+function fillInspect(d,notes){
+  INSPECT_ITEMS.forEach(({k})=>{
+    if(d[k]) setInspect(k,d[k]);
+    if(notes&&notes[k]){inspectNotes[k]=notes[k];const inp=document.getElementById('inp-'+k);if(inp)inp.value=notes[k]}
+  });
+}
+
+// ── MOVE PHOTOS ──
+function buildMoveinChecklist(){
+  const c=document.getElementById('movein-checklist');if(!c)return;c.innerHTML='';
+  MOVEIN_CHECK.forEach(l=>{
+    const el=document.createElement('div');el.className='ci';
+    el.innerHTML=`<span class="ck">◻</span>${l}`;
+    el.onclick=()=>{const done=el.classList.toggle('checked');el.querySelector('.ck').textContent=done?'📸':'◻'};
+    c.appendChild(el);
+  });
+}
+function handleMovePhotos(inp,type){
+  const store=type==='in'?moveInPhotos:moveOutPhotos;
+  const listId=type==='in'?'movein-photo-list':'moveout-photo-list';
+  Array.from(inp.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{store.files.push({name:f.name,data:e.target.result});renderMovePhotos(type)};
+    r.readAsDataURL(f);
+  });
+}
+function renderMovePhotos(type){
+  const store=type==='in'?moveInPhotos:moveOutPhotos;
+  const listId=type==='in'?'movein-photo-list':'moveout-photo-list';
+  const el=document.getElementById(listId);if(!el)return;
+  el.innerHTML=store.files.map((f,i)=>`
+    <div style="position:relative;display:inline-block">
+      <img src="${f.data}" style="width:72px;height:72px;object-fit:cover;border-radius:7px;border:2px solid var(--border);cursor:pointer" onclick="openImg('${f.data}')">
+      <button onclick="${type==='in'?'moveInPhotos':'moveOutPhotos'}.files.splice(${i},1);renderMovePhotos('${type}')" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;border:none;background:#C05C5C;color:#fff;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>`).join('');
+}
+
+
+// ── tabs ──
+function go(tab,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(tab==='charts') renderCharts();
+  if(tab==='moving'){movingS=JSON.parse(localStorage.getItem('tc25-mv')||'{}');buildMoving();}
+  if(tab==='contract') buildContract();
+  if(tab==='pk') populatePK();
+}
+
+// ── 591 link ──
+document.getElementById('f591').addEventListener('input',function(){
+  const v=this.value.trim();
+  const a=document.getElementById('open591');
+  if(v.startsWith('http')){a.href=v;a.style.display='flex'}
+  else a.style.display='none';
+});
+
+// ── MUST ──
+function buildMust(){
+  const g=document.getElementById('must-grid');g.innerHTML='';
+  MUST_ITEMS.forEach(({k,l})=>{
+    mustS[k]=false;
+    const el=document.createElement('div');
+    el.className='ci must-item';el.id='must-'+k;
+    el.innerHTML=`<span class="ck">◻</span>${l}`;
+    el.onclick=()=>togMust(k,el);g.appendChild(el);
+  });
+}
+function togMust(k,el){mustS[k]=!mustS[k];el.classList.toggle('checked',mustS[k]);el.querySelector('.ck').textContent=mustS[k]?'✅':'◻'}
+function fillMust(d){MUST_ITEMS.forEach(({k})=>{mustS[k]=d[k]||false;const el=document.getElementById('must-'+k);if(el){el.classList.toggle('checked',mustS[k]);el.querySelector('.ck').textContent=mustS[k]?'✅':'◻'}})}
+
+// ── BONUS ──
+function buildBonus(){
+  const g=document.getElementById('bonus-grid');g.innerHTML='';
+  BONUS_ITEMS.forEach(({k,l})=>{
+    bonusS[k]=false;
+    const el=document.createElement('div');
+    el.className='ci bonus-item';el.id='bonus-'+k;
+    el.innerHTML=`<span class="ck">◻</span>${l}`;
+    el.onclick=()=>togBonus(k,el);g.appendChild(el);
+  });
+}
+function togBonus(k,el){bonusS[k]=!bonusS[k];el.classList.toggle('checked',bonusS[k]);el.querySelector('.ck').textContent=bonusS[k]?'⭐':'◻'}
+function fillBonus(d){BONUS_ITEMS.forEach(({k})=>{bonusS[k]=d[k]||false;const el=document.getElementById('bonus-'+k);if(el){el.classList.toggle('checked',bonusS[k]);el.querySelector('.ck').textContent=bonusS[k]?'⭐':'◻'}})}
+
+// ── EQUIP ──
+function buildEquip(){
+  const g=document.getElementById('equip-grid');g.innerHTML='';
+  EQUIP_ITEMS.forEach(e=>{
+    equipS[e]=false;
+    const el=document.createElement('div');el.className='ci';el.id='eq-'+e;
+    el.innerHTML=`<span class="ck">◻</span>${e}`;
+    el.onclick=()=>{equipS[e]=!equipS[e];el.classList.toggle('checked',equipS[e]);el.querySelector('.ck').textContent=equipS[e]?'✅':'◻'};
+    g.appendChild(el);
+  });
+}
+function fillEquip(d){EQUIP_ITEMS.forEach(e=>{equipS[e]=d[e]||false;const el=document.getElementById('eq-'+e);if(el){el.classList.toggle('checked',equipS[e]);el.querySelector('.ck').textContent=equipS[e]?'✅':'◻'}})}
+
+// ── AMENITY ──
+function buildAmen(){
+  const c=document.getElementById('amen-list');c.innerHTML='';
+  AMENITIES.forEach(({k,l,must})=>{
+    amenS[k]='';
+    const row=document.createElement('div');row.className='ar';
+    row.innerHTML=`<span class="al">${l}${must?'<span class="req-badge must">必要</span>':''}</span>
+      <div class="pb">
+        <button class="pbt" id="pb-${k}-near" onclick="setP('${k}','near')">近</button>
+        <button class="pbt" id="pb-${k}-mid"  onclick="setP('${k}','mid')">中</button>
+        <button class="pbt" id="pb-${k}-far"  onclick="setP('${k}','far')">遠</button>
+        <button class="pbt" id="pb-${k}-none" onclick="setP('${k}','none')">無</button>
+      </div>`;
+    c.appendChild(row);
+  });
+}
+function setP(k,v){
+  amenS[k]=v;
+  ['near','mid','far','none'].forEach(x=>{const b=document.getElementById(`pb-${k}-${x}`);if(b)b.className='pbt'+(x===v?' '+x:'')});
+}
+function fillAmen(d){AMENITIES.forEach(({k})=>{amenS[k]=d[k]||'';if(d[k])setP(k,d[k])})}
+
+// ── SCORES ──
+function buildScores(){
+  const c=document.getElementById('score-sec');c.innerHTML='';
+  SCORES.forEach(({k,l})=>{
+    scoreS[k]=0;
+    const row=document.createElement('div');row.className='sr';
+    let stars='';for(let i=1;i<=5;i++)stars+=`<button class="sb" id="st-${k}-${i}" onclick="setStar('${k}',${i})">★</button>`;
+    row.innerHTML=`<span class="sl">${l}</span><div class="ss">${stars}</div><span class="sn" id="sn-${k}">0</span>`;
+    c.appendChild(row);
+  });
+}
+function setStar(k,v){
+  scoreS[k]=v;
+  for(let i=1;i<=5;i++){const b=document.getElementById(`st-${k}-${i}`);if(b)b.classList.toggle('on',i<=v)}
+  const sn=document.getElementById('sn-'+k);if(sn)sn.textContent=v;
+}
+function fillScores(d){SCORES.forEach(({k})=>{setStar(k,d[k]||0)})}
+
+// ── SAVE ──
+function saveHouse(){
+  const name=document.getElementById('fn').value.trim();
+  if(!name){alert('請輸入房子名稱！');return}
+  const total=SCORES.reduce((s,{k})=>s+(scoreS[k]||0),0);
+  const mustCount=MUST_ITEMS.filter(({k})=>mustS[k]).length;
+  const bonusCount=BONUS_ITEMS.filter(({k})=>bonusS[k]).length;
+  const h={
+    id:editId||Date.now().toString(),name,
+    rent:+document.getElementById('frent').value||0,
+    dep:+document.getElementById('fdep').value||0,
+    sz:+document.getElementById('fsz').value||0,
+    com:+document.getElementById('fcom').value||0,
+    addr:document.getElementById('faddr').value,
+    url591:document.getElementById('f591').value,
+    lname:document.getElementById('lname').value,
+    lphone:document.getElementById('lphone').value,
+    lline:document.getElementById('lline').value,
+    ldate:document.getElementById('ldate').value,
+    lnote:document.getElementById('lnote').value,
+    note:document.getElementById('fnote').value,
+    dec:document.getElementById('fdec').value,
+    elecRate:+document.getElementById('felec-rate').value||0,
+    elecEst:+document.getElementById('felec-est').value||0,
+    mgmt:+document.getElementById('fmgmt').value||0,
+    netFee:+document.getElementById('fnet-fee').value||0,
+    moveInUrl:document.getElementById('movein-url').value,
+    moveOutUrl:document.getElementById('moveout-url').value,
+    moveInFiles:[...moveInPhotos.files],
+    moveOutFiles:[...moveOutPhotos.files],
+    must:{...mustS},bonus:{...bonusS},equip:{...equipS},amen:{...amenS},
+    special:{...specialS},inspect:{...inspectS},inspectNotes:{...inspectNotes},
+    scores:{...scoreS},total,mustCount,bonusCount
+  };
+  if(editId){const i=houses.findIndex(x=>x.id===editId);houses[i]=h;editId=null}
+  else houses.push(h);
+  save();resetForm();renderGrid();updateCount();
+  go('list',document.querySelectorAll('.tab-btn')[0]);
+}
+
+function resetForm(){
+  editId=null;
+  ['fn','frent','fdep','fsz','fcom','faddr','f591','lname','lphone','lline','ldate','lnote','fnote',
+   'felec-rate','felec-est','fmgmt','fnet-fee','movein-url','moveout-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('fdec').value='';
+  document.getElementById('open591').style.display='none';
+  document.getElementById('calc-total').textContent='—';
+  document.getElementById('calc-year').textContent='—';
+  moveInPhotos={files:[],url:''};moveOutPhotos={files:[],url:''};
+  ['movein-photo-list','moveout-photo-list'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=''});
+  specialS={};inspectS={};inspectNotes={};
+  buildMust();buildBonus();buildEquip();buildAmen();buildScores();buildSpecial();buildInspect();buildMoveinChecklist();
+}
+
+function editHouse(id){
+  const h=houses.find(x=>x.id===id);editId=id;
+  document.getElementById('fn').value=h.name;
+  document.getElementById('frent').value=h.rent;
+  document.getElementById('fdep').value=h.dep;
+  document.getElementById('fsz').value=h.sz;
+  document.getElementById('fcom').value=h.com;
+  document.getElementById('faddr').value=h.addr||'';
+  document.getElementById('f591').value=h.url591||'';
+  if(h.url591){const a=document.getElementById('open591');a.href=h.url591;a.style.display='flex'}
+  document.getElementById('lname').value=h.lname||'';
+  document.getElementById('lphone').value=h.lphone||'';
+  document.getElementById('lline').value=h.lline||'';
+  document.getElementById('ldate').value=h.ldate||'';
+  document.getElementById('lnote').value=h.lnote||'';
+  document.getElementById('fnote').value=h.note||'';
+  document.getElementById('fdec').value=h.dec||'';
+  document.getElementById('felec-rate').value=h.elecRate||'';
+  document.getElementById('felec-est').value=h.elecEst||'';
+  document.getElementById('fmgmt').value=h.mgmt||'';
+  document.getElementById('fnet-fee').value=h.netFee||'';
+  document.getElementById('movein-url').value=h.moveInUrl||'';
+  document.getElementById('moveout-url').value=h.moveOutUrl||'';
+  moveInPhotos={files:[...(h.moveInFiles||[])],url:h.moveInUrl||''};
+  moveOutPhotos={files:[...(h.moveOutFiles||[])],url:h.moveOutUrl||''};
+  renderMovePhotos('in');renderMovePhotos('out');
+  fillMust(h.must||{});fillBonus(h.bonus||{});fillEquip(h.equip||{});fillAmen(h.amen||{});fillScores(h.scores||{});
+  fillSpecial(h.special||{});fillInspect(h.inspect||{},h.inspectNotes||{});
+  calcCost();
+  go('add',document.querySelectorAll('.tab-btn')[1]);
+}
+
+function delHouse(id){
+  if(!confirm('確定刪除？'))return;
+  houses=houses.filter(x=>x.id!==id);save();renderGrid();updateCount();
+}
+
+// ── RENDER CARDS ──
+function renderGrid(){
+  const g=document.getElementById('hgrid');
+  const emp=document.getElementById('list-empty');
+  g.innerHTML='';
+  if(!houses.length){emp.style.display='block';return}
+  emp.style.display='none';
+  const dm={want:['tw','✅ 想租'],maybe:['tm','🤔 再想想'],no:['tn','⛔ 不考慮'],'':[' t0','未決定']};
+  houses.forEach(h=>{
+    const pct=(h.total/25)*100;
+    const [tc,tl]=dm[h.dec]||dm[''];
+    const mustPct=Math.round((h.mustCount/MUST_ITEMS.length)*100);
+    const c=document.createElement('div');c.className='hcard';
+    c.innerHTML=`
+      <button class="del" onclick="delHouse('${h.id}')">✕</button>
+      <div class="cn">${h.name}</div>
+      ${h.rent?`<div class="cp">NT$ ${h.rent.toLocaleString()} / 月</div>`:''}
+      <div style="font-size:.76rem;color:var(--ink2);margin-top:2px">
+        ${h.sz?`${h.sz}坪 `:''}${h.com?`🚌${h.com}分 `:''}
+        ${h.lphone?`📞<a href="tel:${h.lphone}" style="color:var(--accent)">${h.lphone}</a> `:''}
+        ${h.url591?`<a href="${h.url591}" target="_blank" style="color:var(--accent)">591🔗</a>`:''}
+      </div>
+      <div style="margin-top:6px;font-size:.75rem;color:var(--ink2)">
+        必要條件 ${h.mustCount}/${MUST_ITEMS.length} ✅　加分 ${h.bonusCount}/${BONUS_ITEMS.length} ⭐
+      </div>
+      <span class="ctag ${tc}">${tl}</span>
+      <div class="sbar"><div class="sfill" style="width:${pct}%"></div></div>
+      <div class="slbl">評分 ${h.total}/25　必要條件達成 ${mustPct}%</div>
+      <div class="brow" style="margin-top:9px">
+        <button class="btn btns" style="font-size:.74rem;padding:5px 11px" onclick="editHouse('${h.id}')">✏️ 編輯</button>
+      </div>`;
+    g.appendChild(c);
+  });
+}
+
+function updateCount(){document.getElementById('hcount').textContent=`目前 ${houses.length} 間房子`}
+
+// ── CHARTS ──
+function proxN(v){return v==='near'?3:v==='mid'?2:v==='far'?1:0}
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
+
+function renderCharts(){
+  const emp=document.getElementById('charts-empty');
+  const wrap=document.getElementById('charts-wrap');
+  if(!houses.length){emp.style.display='block';wrap.style.display='none';return}
+  emp.style.display='none';wrap.style.display='block';
+  const names=houses.map(h=>h.name);
+  const cols=houses.map((_,i)=>PAL[i%PAL.length]);
+
+  // rent bar
+  dc('crent');charts['crent']=new Chart(document.getElementById('crent'),{
+    type:'bar',data:{labels:names,datasets:[{label:'月租金',data:houses.map(h=>h.rent),backgroundColor:cols,borderRadius:6}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>`$${v.toLocaleString()}`}}},responsive:true}
+  });
+
+  // score doughnut
+  dc('cscore');charts['cscore']=new Chart(document.getElementById('cscore'),{
+    type:'doughnut',data:{labels:names,datasets:[{data:houses.map(h=>h.total),backgroundColor:cols,borderWidth:2,borderColor:'#fff'}]},
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},cutout:'58%',responsive:true}
+  });
+
+  // radar top3
+  dc('cradar');
+  const top3=[...houses].sort((a,b)=>b.total-a.total).slice(0,3);
+  charts['cradar']=new Chart(document.getElementById('cradar'),{
+    type:'radar',
+    data:{labels:SCORES.map(s=>s.l),datasets:top3.map((h,i)=>({
+      label:h.name,data:SCORES.map(s=>h.scores[s.k]||0),
+      backgroundColor:PAL[i%PAL.length]+'33',borderColor:PAL[i%PAL.length],
+      pointBackgroundColor:PAL[i%PAL.length],borderWidth:2
+    }))},
+    options:{scales:{r:{beginAtZero:true,max:5,ticks:{stepSize:1}}},plugins:{legend:{position:'bottom'}},responsive:true}
+  });
+
+  // amenity grouped bar
+  dc('camen');charts['camen']=new Chart(document.getElementById('camen'),{
+    type:'bar',
+    data:{labels:AMENITIES.map(a=>a.l),datasets:houses.map((h,i)=>({
+      label:h.name,data:AMENITIES.map(a=>proxN(h.amen[a.k])),
+      backgroundColor:PAL[i%PAL.length],borderRadius:4
+    }))},
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,max:3,ticks:{stepSize:1,callback:v=>['無','遠','中','近'][v]||''}}},responsive:true}
+  });
+
+  // must condition bar
+  dc('cmust');charts['cmust']=new Chart(document.getElementById('cmust'),{
+    type:'bar',
+    data:{labels:names,datasets:[
+      {label:'必要條件達成',data:houses.map(h=>h.mustCount),backgroundColor:cols,borderRadius:6},
+      {label:'加分條件達成',data:houses.map(h=>h.bonusCount),backgroundColor:cols.map(c=>c+'88'),borderRadius:6}
+    ]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,max:Math.max(MUST_ITEMS.length,BONUS_ITEMS.length),ticks:{stepSize:1}}},responsive:true}
+  });
+
+  // rank table
+  const sorted=[...houses].sort((a,b)=>{
+    if(b.mustCount!==a.mustCount)return b.mustCount-a.mustCount;
+    return b.total-a.total;
+  });
+  const medals=['🥇','🥈','🥉'];
+  const dm={want:'✅',maybe:'🤔',no:'⛔','':`—`};
+  const tbl=document.getElementById('rtbl');
+  tbl.innerHTML=`<tr><th>#</th><th>房子</th><th>月租金</th><th>必要條件</th><th>加分</th><th>評分</th><th>意願</th></tr>`;
+  sorted.forEach((h,i)=>{
+    tbl.innerHTML+=`<tr>
+      <td>${medals[i]||i+1}</td>
+      <td><strong>${h.name}</strong>${h.lphone?`<br><small style="color:var(--ink2)">📞${h.lphone}</small>`:''}</td>
+      <td style="font-family:'DM Mono',monospace">NT$${h.rent.toLocaleString()}</td>
+      <td><strong>${h.mustCount}</strong>/${MUST_ITEMS.length}</td>
+      <td>${h.bonusCount}/${BONUS_ITEMS.length}</td>
+      <td><strong>${h.total}</strong>/25</td>
+      <td>${dm[h.dec]||'—'}</td>
+    </tr>`;
+  });
+}
+
+// ── WATCHLIST ──
+let watches=JSON.parse(localStorage.getItem('tc25-watch')||'[]');
+let schedules=JSON.parse(localStorage.getItem('tc25-sch')||'[]');
+let editWId=null;
+let pendingPhotoUrls=[];
+let pendingPhotoFiles=[];
+
+function saveW(){localStorage.setItem('tc25-watch',JSON.stringify(watches))}
+function saveSch(){localStorage.setItem('tc25-sch',JSON.stringify(schedules))}
+
+// ── watch sub-tabs ──
+function wTab(t){
+  ['list','schedule','overview'].forEach(x=>{
+    document.getElementById('wpane-'+x).style.display=x===t?'block':'none';
+    const btn=document.getElementById('wt-'+x);
+    btn.style.background=x===t?'var(--accent)':'transparent';
+    btn.style.color=x===t?'#fff':'var(--ink2)';
+  });
+  if(t==='overview') renderOverview();
+  if(t==='schedule') renderSchedule();
+}
+
+// ── photo helpers ──
+function addPhotoUrl(){
+  const v=document.getElementById('wphoto-url').value.trim();
+  if(!v)return;
+  pendingPhotoUrls.push(v);
+  document.getElementById('wphoto-url').value='';
+  renderPendingPhotos();
+}
+function handlePhotoFiles(inp){
+  Array.from(inp.files).forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=e=>{ pendingPhotoFiles.push({name:f.name,data:e.target.result}); renderPendingPhotos(); };
+    reader.readAsDataURL(f);
+  });
+}
+function renderPendingPhotos(){
+  const ul=document.getElementById('wphoto-url-list');
+  ul.innerHTML=pendingPhotoUrls.map((u,i)=>`
+    <div style="display:flex;align-items:center;gap:5px;background:var(--surface2);border-radius:6px;padding:4px 8px;font-size:.72rem;max-width:100%">
+      <a href="${u}" target="_blank" style="color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">🔗 ${u.replace(/https?:\/\//,'').slice(0,35)}…</a>
+      <button onclick="pendingPhotoUrls.splice(${i},1);renderPendingPhotos()" style="border:none;background:none;color:#aaa;cursor:pointer;font-size:.85rem">✕</button>
+    </div>`).join('');
+  const fl=document.getElementById('wphoto-file-list');
+  fl.innerHTML=pendingPhotoFiles.map((f,i)=>`
+    <div style="position:relative;display:inline-block">
+      <img src="${f.data}" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:2px solid var(--border)">
+      <button onclick="pendingPhotoFiles.splice(${i},1);renderPendingPhotos()" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;border:none;background:#C05C5C;color:#fff;font-size:.65rem;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>`).join('');
+}
+
+// ── save / edit watch ──
+function saveWatch(){
+  const name=document.getElementById('wname').value.trim();
+  if(!name){alert('請輸入房源名稱！');return}
+  const photoUrls=[...pendingPhotoUrls];
+  const photoFiles=pendingPhotoFiles.map(f=>({name:f.name,data:f.data}));
+  const w={
+    id:editWId||Date.now().toString(),
+    name,
+    rent:+document.getElementById('wrent').value||0,
+    url:document.getElementById('wurl').value.trim(),
+    addr:document.getElementById('waddr').value.trim(),
+    phone:document.getElementById('wphone').value.trim(),
+    note:document.getElementById('wnote').value.trim(),
+    photoUrls, photoFiles,
+    addedAt:new Date().toLocaleDateString('zh-TW'),
+    checkedAt: editWId ? (watches.find(x=>x.id===editWId)||{}).checkedAt||'' : '',
+    status: editWId ? (watches.find(x=>x.id===editWId)||{}).status||'active' : 'active'
+  };
+  if(editWId){const i=watches.findIndex(x=>x.id===editWId);watches[i]=w;}
+  else watches.unshift(w);
+  saveW();
+  cancelWatchEdit();
+  renderWatch();
+}
+function cancelWatchEdit(){
+  editWId=null;
+  pendingPhotoUrls=[];pendingPhotoFiles=[];
+  ['wname','wrent','wurl','waddr','wphone','wnote','wphoto-url'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('wphoto-url-list').innerHTML='';
+  document.getElementById('wphoto-file-list').innerHTML='';
+  document.getElementById('watch-form-title').textContent='🔖 新增591收藏房源';
+  document.getElementById('watch-save-btn').textContent='🔖 加入收藏';
+  document.getElementById('watch-cancel-btn').style.display='none';
+}
+function editWatch(id){
+  const w=watches.find(x=>x.id===id);if(!w)return;
+  editWId=id;
+  document.getElementById('wname').value=w.name;
+  document.getElementById('wrent').value=w.rent;
+  document.getElementById('wurl').value=w.url||'';
+  document.getElementById('waddr').value=w.addr||'';
+  document.getElementById('wphone').value=w.phone||'';
+  document.getElementById('wnote').value=w.note||'';
+  pendingPhotoUrls=[...(w.photoUrls||[])];
+  pendingPhotoFiles=[...(w.photoFiles||[])];
+  renderPendingPhotos();
+  document.getElementById('watch-form-title').textContent='✏️ 編輯房源';
+  document.getElementById('watch-save-btn').textContent='💾 儲存修改';
+  document.getElementById('watch-cancel-btn').style.display='inline-flex';
+  document.getElementById('watch-form-card').scrollIntoView({behavior:'smooth'});
+}
+function setWStatus(id,s){
+  const w=watches.find(x=>x.id===id);if(!w)return;
+  w.status=s;w.checkedAt=new Date().toLocaleDateString('zh-TW');
+  saveW();renderWatch();
+}
+function delWatch(id){
+  if(!confirm('確定刪除這個收藏？'))return;
+  watches=watches.filter(x=>x.id!==id);saveW();renderWatch();
+}
+function promoteWatch(id){
+  const w=watches.find(x=>x.id===id);if(!w)return;
+  document.getElementById('fn').value=w.name;
+  document.getElementById('frent').value=w.rent;
+  document.getElementById('faddr').value=w.addr||'';
+  document.getElementById('f591').value=w.url||'';
+  document.getElementById('lphone').value=w.phone||'';
+  document.getElementById('fnote').value=w.note||'';
+  if(w.url){const a=document.getElementById('open591');a.href=w.url;a.style.display='flex'}
+  go('add',document.querySelectorAll('.tab-btn')[1]);
+}
+
+function renderWatch(){
+  const list=document.getElementById('watch-list');
+  const emp=document.getElementById('watch-empty');
+  list.innerHTML='';
+  if(!watches.length){emp.style.display='block';return}
+  emp.style.display='none';
+  const sMap={active:['#D4EDDA','#1A6B30','✅ 還在'],offline:['#F8D7DA','#721C24','⛔ 已下架'],moved:['#FFF3CD','#856404','🤔 狀況不明']};
+  watches.forEach(w=>{
+    const [bg,cl,lbl]=sMap[w.status]||sMap['active'];
+    const days=w.checkedAt?Math.floor((Date.now()-new Date(w.checkedAt).getTime())/(864e5)):null;
+    const stale=days!==null&&days>=5;
+    // photos
+    const allPhotos=[...(w.photoUrls||[]).map(u=>({type:'url',src:u})),...(w.photoFiles||[]).map(f=>({type:'file',src:f.data,name:f.name}))];
+    const photoHtml=allPhotos.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">
+      ${allPhotos.map(p=>p.type==='file'
+        ?`<img src="${p.src}" style="width:72px;height:72px;object-fit:cover;border-radius:7px;border:2px solid var(--border);cursor:pointer" onclick="openImg('${p.src}')">`
+        :`<a href="${p.src}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:72px;height:72px;background:var(--surface2);border-radius:7px;border:2px solid var(--border);font-size:1.5rem;text-decoration:none">🖼</a>`
+      ).join('')}
+    </div>`:'';
+    const card=document.createElement('div');
+    card.className='fcard';
+    card.style.cssText=`border-left:4px solid ${cl};opacity:${w.status==='offline'?.6:1}`;
+    card.innerHTML=`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.97rem;margin-bottom:3px">${w.name}</div>
+          ${w.rent?`<div style="font-family:'DM Mono',monospace;color:var(--accent);font-size:1rem;font-weight:500">NT$ ${w.rent.toLocaleString()} / 月</div>`:''}
+          ${w.addr?`<div style="font-size:.76rem;color:var(--ink2);margin-top:2px">📍 ${w.addr}
+            <a href="https://maps.google.com/?q=${encodeURIComponent(w.addr)}" target="_blank" style="color:var(--accent);font-size:.68rem;margin-left:4px">地圖↗</a>
+          </div>`:''}
+          ${w.phone?`<div style="font-size:.76rem;color:var(--ink2)">📞 <a href="tel:${w.phone}" style="color:var(--accent)">${w.phone}</a></div>`:''}
+          ${w.note?`<div style="font-size:.78rem;color:var(--ink2);margin-top:5px;line-height:1.5">${w.note}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+          <span style="background:${bg};color:${cl};font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:20px">${lbl}</span>
+          ${w.checkedAt?`<span style="font-size:.68rem;color:${stale?'#C05C5C':'var(--ink2)'}">確認：${w.checkedAt}${stale?' ⚠️':''}</span>`:'<span style="font-size:.68rem;color:#C05C5C">⚠️ 尚未確認</span>'}
+          <span style="font-size:.66rem;color:var(--ink2)">收藏：${w.addedAt}</span>
+        </div>
+      </div>
+      ${photoHtml}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        ${w.url?`<a href="${w.url}" target="_blank" class="btn btns" style="font-size:.73rem;padding:5px 10px;text-decoration:none">🔗 591</a>`:''}
+        <button class="btn btns" style="font-size:.73rem;padding:5px 10px" onclick="setWStatus('${w.id}','active')">✅ 還在</button>
+        <button class="btn btns" style="font-size:.73rem;padding:5px 10px" onclick="setWStatus('${w.id}','offline')">⛔ 下架</button>
+        <button class="btn btns" style="font-size:.73rem;padding:5px 10px" onclick="setWStatus('${w.id}','moved')">🤔 不明</button>
+        <button class="btn btns" style="font-size:.73rem;padding:5px 10px" onclick="editWatch('${w.id}')">✏️ 編輯</button>
+        <button class="btn btnp" style="font-size:.73rem;padding:5px 10px" onclick="promoteWatch('${w.id}')">📋 移到評比</button>
+        <button class="del" style="position:static;font-size:.85rem;margin-left:auto" onclick="delWatch('${w.id}')">✕</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+function openImg(src){const win=window.open();win.document.write(`<img src="${src}" style="max-width:100%;height:auto">`)}
+
+// ── SCHEDULE ──
+function populateSchHouses(){
+  const sel=document.getElementById('sch-house');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">請選擇（收藏清單中的房子）</option>';
+  watches.filter(w=>w.status!=='offline').forEach(w=>{
+    sel.innerHTML+=`<option value="${w.id}">${w.name}${w.addr?' — '+w.addr:''}</option>`;
+  });
+  if(cur) sel.value=cur;
+}
+function addSchedule(){
+  const hid=document.getElementById('sch-house').value;
+  const date=document.getElementById('sch-date').value;
+  const time=document.getElementById('sch-time').value;
+  if(!hid||!date){alert('請選擇房子和日期！');return}
+  const s={id:Date.now().toString(),hid,date,time,note:document.getElementById('sch-note').value.trim()};
+  schedules.push(s);schedules.sort((a,b)=>a.date+a.time>b.date+b.time?1:-1);
+  saveSch();
+  document.getElementById('sch-date').value='';
+  document.getElementById('sch-time').value='';
+  document.getElementById('sch-note').value='';
+  renderSchedule();
+}
+function delSchedule(id){
+  schedules=schedules.filter(x=>x.id!==id);saveSch();renderSchedule();
+}
+function renderSchedule(){
+  populateSchHouses();
+  const list=document.getElementById('sch-list');
+  const emp=document.getElementById('sch-empty');
+  list.innerHTML='';
+  const today=new Date().toISOString().slice(0,10);
+  if(!schedules.length){emp.style.display='block';return}
+  emp.style.display='none';
+  // group by date
+  const byDate={};
+  schedules.forEach(s=>{(byDate[s.date]=byDate[s.date]||[]).push(s)});
+  Object.entries(byDate).sort().forEach(([date,items])=>{
+    const isPast=date<today;
+    const d=new Date(date+'T00:00:00');
+    const dayStr=['日','一','二','三','四','五','六'][d.getDay()];
+    const block=document.createElement('div');block.className='fcard';
+    block.style.opacity=isPast?'.6':'1';
+    block.style.borderLeft=isPast?'4px solid #ccc':`4px solid var(--accent)`;
+    block.innerHTML=`<div style="font-weight:700;font-size:.9rem;color:${isPast?'var(--ink2)':'var(--accent)'};margin-bottom:10px">
+      ${isPast?'✓':''} ${date.replace(/-/g,'/')}（週${dayStr}）${isPast?' <span style="font-size:.68rem;background:#eee;color:#999;border-radius:10px;padding:1px 7px">已過</span>':''}
+    </div>`;
+    items.forEach(s=>{
+      const w=watches.find(x=>x.id===s.hid)||{name:'（已刪除）',addr:''};
+      const gmapQ=encodeURIComponent((w.addr||w.name)+' 台中市');
+      block.innerHTML+=`
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="font-family:'DM Mono',monospace;font-size:.88rem;font-weight:700;color:var(--accent);min-width:45px;padding-top:1px">${s.time||'--:--'}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:.87rem">${w.name}</div>
+            ${w.addr?`<div style="font-size:.73rem;color:var(--ink2)">📍 ${w.addr}
+              <a href="https://www.google.com/maps/search/${gmapQ}" target="_blank" style="color:var(--accent);font-size:.68rem;margin-left:4px">Google Maps ↗</a>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${gmapQ}" target="_blank" style="color:var(--accent2);font-size:.68rem;margin-left:4px">導航 ↗</a>
+            </div>`:''}
+            ${s.note?`<div style="font-size:.73rem;color:var(--ink2);margin-top:2px">📌 ${s.note}</div>`:''}
+          </div>
+          <button class="del" style="position:static;font-size:.82rem" onclick="delSchedule('${s.id}')">✕</button>
+        </div>`;
+    });
+    list.appendChild(block);
+  });
+}
+
+// ── OVERVIEW ──
+function renderOverview(){
+  // stats
+  const stats=document.getElementById('overview-stats');
+  const active=watches.filter(w=>w.status==='active').length;
+  const offline=watches.filter(w=>w.status==='offline').length;
+  const upcoming=schedules.filter(s=>s.date>=new Date().toISOString().slice(0,10)).length;
+  const noCheck=watches.filter(w=>w.status==='active'&&!w.checkedAt).length;
+  stats.innerHTML=[
+    ['👀','在看中',active,'var(--accent)'],
+    ['⛔','已下架',offline,'var(--accent4)'],
+    ['📅','待看行程',upcoming,'#7B9EBE'],
+    ['⚠️','未確認',noCheck,'#E8A87C'],
+  ].map(([em,lb,v,c])=>`
+    <div style="background:var(--surface);border-radius:var(--r);padding:14px;text-align:center;border:1px solid var(--border);box-shadow:var(--sh)">
+      <div style="font-size:1.5rem">${em}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:${c}">${v}</div>
+      <div style="font-size:.72rem;color:var(--ink2)">${lb}</div>
+    </div>`).join('');
+
+  // list
+  const ol=document.getElementById('overview-list');
+  ol.innerHTML='';
+  if(!watches.length){ol.innerHTML='<div class="empty"><span class="big">🏠</span>收藏清單還是空的</div>';return}
+  const activeWatches=watches.filter(w=>w.status!=='offline');
+  activeWatches.forEach(w=>{
+    const myScheds=schedules.filter(s=>s.hid===w.id).sort((a,b)=>a.date>b.date?1:-1);
+    const nextSch=myScheds.find(s=>s.date>=new Date().toISOString().slice(0,10));
+    const gmapQ=encodeURIComponent((w.addr||w.name)+' 台中市');
+    const nearbyLinks=[
+      ['🏥 醫院','hospital near '+gmapQ],
+      ['💪 健身房','gym near '+gmapQ],
+      ['🏪 便利商店','convenience store near '+gmapQ],
+      ['🛒 全聯/家樂福','supermarket near '+gmapQ],
+      ['🌙 夜市/傳統市場','night market near '+gmapQ],
+      ['🚌 公車站','bus stop near '+gmapQ],
+      ['🚲 UBike','youbike near '+gmapQ],
+      ['🅿️ 停車場','parking near '+gmapQ],
+    ];
+    const row=document.createElement('div');
+    row.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)';
+    row.innerHTML=`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-weight:700;font-size:.97rem">${w.name}</div>
+          ${w.rent?`<div style="font-family:'DM Mono',monospace;color:var(--accent);font-weight:500">NT$ ${w.rent.toLocaleString()} / 月</div>`:''}
+          ${w.addr?`<div style="font-size:.75rem;color:var(--ink2)">📍 ${w.addr}</div>`:''}
+          ${w.phone?`<div style="font-size:.75rem;color:var(--ink2)">📞 <a href="tel:${w.phone}" style="color:var(--accent)">${w.phone}</a></div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${w.url?`<a href="${w.url}" target="_blank" class="btn btns" style="font-size:.72rem;padding:4px 9px;text-decoration:none">🔗 591</a>`:''}
+          <button class="btn btns" style="font-size:.72rem;padding:4px 9px" onclick="wTab('list');editWatch('${w.id}')">✏️ 編輯</button>
+        </div>
+      </div>
+      ${nextSch?`<div style="background:#EAF2EF;border-radius:8px;padding:7px 11px;font-size:.78rem;color:var(--accent);font-weight:600;margin-bottom:10px">📅 下次看房：${nextSch.date.replace(/-/g,'/')} ${nextSch.time||''}${nextSch.note?' — '+nextSch.note:''}</div>`:'<div style="background:#FFF8E7;border-radius:8px;padding:7px 11px;font-size:.78rem;color:#856404;margin-bottom:10px">📅 尚未安排看房行程</div>'}
+      <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:6px">🗺 查附近機能（Google Maps）</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${nearbyLinks.map(([lb,q])=>`<a href="https://www.google.com/maps/search/${encodeURIComponent(q)}" target="_blank" style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.72rem;font-weight:600;color:var(--ink);text-decoration:none;transition:all .15s">${lb}</a>`).join('')}
+      </div>`;
+    ol.appendChild(row);
+  });
+}
+
+// ── Map placeholder ──
+function activateMap(){
+  const key=document.getElementById('maps-api-key').value.trim();
+  if(!key){alert('請輸入 Google Maps API Key');return}
+  // Load Maps JS API
+  const script=document.createElement('script');
+  script.src=`https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initMap`;
+  script.async=true;document.head.appendChild(script);
+  window.initMap=function(){
+    document.getElementById('map-container').style.display='block';
+    document.querySelector('#maps-api-key').closest('div').style.display='none';
+    const map=new google.maps.Map(document.getElementById('map-container'),{
+      center:{lat:24.1477,lng:120.6736},zoom:14,
+      mapTypeControl:false,streetViewControl:false
+    });
+    const svc=new google.maps.places.PlacesService(map);
+    const types=['hospital','gym','convenience_store','supermarket','bus_station','parking'];
+    watches.filter(w=>w.addr&&w.status!=='offline').forEach((w,i)=>{
+      const gc=new google.maps.Geocoder();
+      gc.geocode({address:w.addr+' 台中市'},res=>{
+        if(!res||!res[0])return;
+        const pos=res[0].geometry.location;
+        const marker=new google.maps.Marker({map,position:pos,title:w.name,
+          icon:{url:'http://maps.google.com/mapfiles/ms/icons/red-dot.png'}});
+        const iw=new google.maps.InfoWindow({content:`<b>${w.name}</b><br>${w.addr}${w.rent?'<br>NT$'+w.rent.toLocaleString()+'/月':''}`});
+        marker.addListener('click',()=>iw.open(map,marker));
+        if(i===0)map.setCenter(pos);
+      });
+    });
+  };
+}
+
+
+// ══ CONTRACT ══
+const CONTRACT_ITEMS=[
+  {cat:'💰 費用相關', items:[
+    {k:'rent_clear',    l:'月租金金額明確寫在合約上', risk:'high'},
+    {k:'deposit_amt',   l:'押金月數明確（通常1-2個月）', risk:'high'},
+    {k:'elec_method',   l:'電費計算方式清楚（台電or獨立計費）', risk:'high'},
+    {k:'water_method',  l:'水費計算方式清楚', risk:'med'},
+    {k:'mgmt_fee',      l:'管理費金額明確', risk:'med'},
+    {k:'rent_raise',    l:'合約期間內不會任意漲租', risk:'high'},
+  ]},
+  {cat:'📅 期限相關', items:[
+    {k:'lease_term',    l:'租期明確（起迄日期）', risk:'high'},
+    {k:'early_term',    l:'提前解約條款合理（非整期租金）', risk:'high'},
+    {k:'renew_notice',  l:'續約/不續約通知期合理（1-2個月）', risk:'med'},
+    {k:'auto_renew',    l:'沒有不合理的自動續約條款', risk:'med'},
+  ]},
+  {cat:'🏠 使用規定', items:[
+    {k:'cooking_ok',    l:'開伙規定明確（或允許）', risk:'med'},
+    {k:'pet_ok',        l:'寵物規定明確', risk:'low'},
+    {k:'decor_ok',      l:'裝潢/釘釘子規定合理', risk:'low'},
+    {k:'sublease_ok',   l:'轉租限制明確', risk:'low'},
+    {k:'guest_ok',      l:'訪客留宿規定合理', risk:'low'},
+  ]},
+  {cat:'🔧 修繕責任', items:[
+    {k:'repair_who',    l:'修繕責任歸屬清楚（房東vs房客）', risk:'high'},
+    {k:'appliance',     l:'家電故障由房東負責修繕', risk:'high'},
+    {k:'structural',    l:'結構性問題（漏水/壁癌）由房東負責', risk:'high'},
+  ]},
+  {cat:'🔑 押金退還', items:[
+    {k:'deposit_return',l:'押金退還時間明確（通常1個月內）', risk:'high'},
+    {k:'deposit_deduct',l:'押金扣除項目明確合理', risk:'high'},
+    {k:'checkin_record',l:'有入住現況紀錄（照片/表單）避免糾紛', risk:'high'},
+  ]},
+  {cat:'📋 其他保障', items:[
+    {k:'real_name',     l:'合約上有你的真實姓名（可申請補助）', risk:'high'},
+    {k:'landlord_id',   l:'確認房東是房屋所有權人', risk:'high'},
+    {k:'notary',        l:'合約有公證（更有法律效力）', risk:'low'},
+    {k:'receipt',       l:'每月租金有收據或匯款記錄', risk:'med'},
+  ]},
+];
+let contractS={};
+
+function buildContract(){
+  const c=document.getElementById('contract-list');
+  if(!c)return;
+  c.innerHTML='';
+  CONTRACT_ITEMS.forEach(({cat,items})=>{
+    const sec=document.createElement('div');
+    sec.style.marginBottom='16px';
+    sec.innerHTML=`<div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--border)">${cat}</div>`;
+    items.forEach(({k,l,risk})=>{
+      contractS[k]=null;
+      const riskColor={high:'#C05C5C',med:'#E8A87C',low:'#6BAA96'}[risk];
+      const riskLabel={high:'高風險',med:'中',low:'低'}[risk];
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap';
+      row.innerHTML=`
+        <span style="flex:1;font-size:.83rem;min-width:180px">${l}
+          <span style="font-size:.65rem;background:${riskColor}22;color:${riskColor};border-radius:10px;padding:1px 6px;margin-left:4px;font-weight:700">${riskLabel}</span>
+        </span>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button id="ct-ok-${k}" onclick="setCT('${k}','ok')" style="padding:4px 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">✅ OK</button>
+          <button id="ct-ng-${k}" onclick="setCT('${k}','ng')" style="padding:4px 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">❌ 有問題</button>
+          <button id="ct-na-${k}" onclick="setCT('${k}','na')" style="padding:4px 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">— 不適用</button>
+        </div>`;
+      sec.appendChild(row);
+    });
+    c.appendChild(sec);
+  });
+}
+function setCT(k,v){
+  contractS[k]=v;
+  const styles={ok:'background:#D4EDDA;border-color:#1A6B30;color:#1A6B30',ng:'background:#F8D7DA;border-color:#721C24;color:#721C24',na:'background:#EEE;border-color:#999;color:#666'};
+  ['ok','ng','na'].forEach(x=>{
+    const b=document.getElementById(`ct-${x}-${k}`);
+    if(b) b.style.cssText='padding:4px 10px;border-radius:20px;border:1.5px solid;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit;'+(x===v?styles[x]:'background:var(--bg);border-color:var(--border);color:var(--ink2)');
+  });
+}
+function saveContract(){
+  const allItems=CONTRACT_ITEMS.flatMap(c=>c.items);
+  const ng=allItems.filter(i=>contractS[i.k]==='ng');
+  const ok=allItems.filter(i=>contractS[i.k]==='ok');
+  const highRiskNG=ng.filter(i=>i.risk==='high');
+  const res=document.getElementById('contract-result');
+  const sum=document.getElementById('contract-summary');
+  res.style.display='block';
+  const riskLevel=highRiskNG.length>=3?'🔴 高風險':highRiskNG.length>=1?'🟡 注意':ng.length>0?'🟢 低風險':'✅ 合約OK';
+  sum.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px">
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center">
+        <div style="font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:#1A6B30">${ok.length}</div>
+        <div style="font-size:.72rem;color:var(--ink2)">條款OK</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center">
+        <div style="font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:#C05C5C">${ng.length}</div>
+        <div style="font-size:.72rem;color:var(--ink2)">有問題</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;text-align:center">
+        <div style="font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--accent)">${riskLevel}</div>
+        <div style="font-size:.72rem;color:var(--ink2)">整體評估</div>
+      </div>
+    </div>
+    ${highRiskNG.length?`<div style="background:#FFF0F0;border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="font-weight:700;font-size:.82rem;color:#C05C5C;margin-bottom:6px">⚠️ 高風險問題（一定要跟房東談）</div>
+      ${highRiskNG.map(i=>`<div style="font-size:.78rem;padding:3px 0;color:var(--ink)">• ${i.l}</div>`).join('')}
+    </div>`:''}
+    ${ng.filter(i=>i.risk!=='high').length?`<div style="background:#FFF8E7;border-radius:8px;padding:12px">
+      <div style="font-weight:700;font-size:.82rem;color:#856404;margin-bottom:6px">📌 其他需注意</div>
+      ${ng.filter(i=>i.risk!=='high').map(i=>`<div style="font-size:.78rem;padding:3px 0;color:var(--ink)">• ${i.l}</div>`).join('')}
+    </div>`:''}`;
+  res.scrollIntoView({behavior:'smooth'});
+}
+function resetContract(){contractS={};buildContract();document.getElementById('contract-result').style.display='none';}
+
+// ══ MOVING ══
+const MOVING_SECTIONS=[
+  {title:'📋 簽約後馬上做', when:'簽約當天', color:'#C05C5C', items:[
+    '拍攝入住現況照片（每個角落）',
+    '確認鑰匙數量並簽收',
+    '申請租屋補助（cahas.taichung.gov.tw）',
+    '確認水電瓦斯帳號是否要過戶',
+    '確認網路申裝或承接',
+  ]},
+  {title:'📦 搬家前兩週', when:'搬家前2週', color:'#E8A87C', items:[
+    '預約搬家公司或借貨車',
+    '開始整理不要的東西（賣/送/丟）',
+    '購買搬家必需品（紙箱、膠帶、氣泡紙）',
+    '通知公司HR更新地址',
+    '通知銀行/郵局更新通訊地址',
+    '通知健保署/勞保局更新地址',
+    '購買新住所缺少的生活用品',
+  ]},
+  {title:'🏠 搬家前一週', when:'搬家前1週', color:'#6BAA96', items:[
+    '確認搬家公司時間和細節',
+    '開始打包衣物、書籍、雜物',
+    '整理重要文件（租約、身分證、存摺）',
+    '購買清潔用品（搬進去前先清潔）',
+    '確認新住所鑰匙/門禁卡已拿到',
+    '規劃傢俱擺設位置',
+  ]},
+  {title:'📅 搬家當天', when:'搬家日', color:'#3D6B5E', items:[
+    '再次拍攝舊住所現況（退租保護）',
+    '清潔舊住所恢復原狀',
+    '搬家公司確認所有物品無損傷',
+    '抵達新住所後確認所有設備正常',
+    '更換重要帳號的登入地址資訊',
+    '通知親友新地址',
+  ]},
+  {title:'📮 搬家後一週', when:'搬家後1週', color:'#7B9EBE', items:[
+    '戶籍遷移（戶政事務所或線上辦理）',
+    '更換駕照/健保卡地址（戶籍遷移後自動更新）',
+    '辦理郵件轉寄（舊地址→新地址）',
+    '確認租屋補助申請進度',
+    '買齊生活必需品',
+    '認識社區環境（垃圾車時間、超市位置）',
+  ]},
+];
+let movingS={};
+
+function buildMoving(){
+  const c=document.getElementById('moving-sections');if(!c)return;
+  c.innerHTML='';
+  // countdown
+  const target=new Date('2026-08-01');
+  const now=new Date();
+  const diff=Math.ceil((target-now)/(1000*60*60*24));
+  const cd=document.getElementById('moving-countdown');
+  if(cd) cd.textContent=diff>0?`距離入住還有 ${diff} 天`:'🎉 搬家日到了！';
+
+  MOVING_SECTIONS.forEach(({title,when,color,items})=>{
+    const sec=document.createElement('div');
+    sec.className='fcard';
+    sec.style.borderLeft=`4px solid ${color}`;
+    const doneCount=items.filter((_,i)=>{
+      const k=title+i;
+      return movingS[k];
+    }).length;
+    sec.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-weight:700;font-size:.95rem;color:${color}">${title}</div>
+          <div style="font-size:.73rem;color:var(--ink2);margin-top:1px">⏰ ${when}</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:.85rem;font-weight:700;color:${color}">${doneCount}/${items.length}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:4px;height:4px;margin-bottom:12px;overflow:hidden">
+        <div style="height:100%;border-radius:4px;background:${color};width:${Math.round(doneCount/items.length*100)}%;transition:width .3s"></div>
+      </div>`;
+    items.forEach((item,i)=>{
+      const k=title+i;
+      if(!(k in movingS)) movingS[k]=false;
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer';
+      row.id='mv-'+CSS.escape(k);
+      row.innerHTML=`<span style="font-size:1.1rem">${movingS[k]?'✅':'◻'}</span><span style="font-size:.83rem;${movingS[k]?'text-decoration:line-through;color:var(--ink2)':''}">${item}</span>`;
+      row.onclick=()=>{movingS[k]=!movingS[k];localStorage.setItem('tc25-mv',JSON.stringify(movingS));buildMoving()};
+      sec.appendChild(row);
+    });
+    c.appendChild(sec);
+  });
+  localStorage.setItem('tc25-mv',JSON.stringify(movingS));
+}
+
+// ══ PK ══
+function populatePK(){
+  ['pk-a','pk-b'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">請選擇</option>';
+    houses.forEach(h=>sel.innerHTML+=`<option value="${h.id}">${h.name}</option>`);
+    if(cur) sel.value=cur;
+  });
+}
+function runPK(){
+  const aid=document.getElementById('pk-a').value;
+  const bid=document.getElementById('pk-b').value;
+  if(!aid||!bid||aid===bid){alert('請選兩間不同的房子！');return}
+  const a=houses.find(h=>h.id===aid);
+  const b=houses.find(h=>h.id===bid);
+  const res=document.getElementById('pk-result');
+  res.style.display='block';
+
+  const rows=[
+    {l:'月租金',    va:`NT$${(a.rent||0).toLocaleString()}`,   vb:`NT$${(b.rent||0).toLocaleString()}`,   win:a.rent&&b.rent?(a.rent<b.rent?'a':a.rent>b.rent?'b':'tie'):''},
+    {l:'月總支出',  va:`NT$${((a.rent||0)+(a.elecEst||0)+(a.mgmt||0)+(a.netFee||0)).toLocaleString()}`, vb:`NT$${((b.rent||0)+(b.elecEst||0)+(b.mgmt||0)+(b.netFee||0)).toLocaleString()}`, win:(()=>{const ta=(a.rent||0)+(a.elecEst||0)+(a.mgmt||0)+(a.netFee||0),tb=(b.rent||0)+(b.elecEst||0)+(b.mgmt||0)+(b.netFee||0);return ta&&tb?(ta<tb?'a':ta>tb?'b':'tie'):''})()} ,
+    {l:'坪數',      va:`${a.sz||'—'}坪`,                        vb:`${b.sz||'—'}坪`,                        win:a.sz&&b.sz?(a.sz>b.sz?'a':a.sz<b.sz?'b':'tie'):''},
+    {l:'到公司',    va:`${a.com||'—'}分鐘`,                     vb:`${b.com||'—'}分鐘`,                     win:a.com&&b.com?(a.com<b.com?'a':a.com>b.com?'b':'tie'):''},
+    {l:'必要條件',  va:`${a.mustCount||0}/${MUST_ITEMS.length}`,vb:`${b.mustCount||0}/${MUST_ITEMS.length}`,win:(a.mustCount||0)>(b.mustCount||0)?'a':(a.mustCount||0)<(b.mustCount||0)?'b':'tie'},
+    {l:'加分條件',  va:`${a.bonusCount||0}/${BONUS_ITEMS.length}`,vb:`${b.bonusCount||0}/${BONUS_ITEMS.length}`,win:(a.bonusCount||0)>(b.bonusCount||0)?'a':(a.bonusCount||0)<(b.bonusCount||0)?'b':'tie'},
+    {l:'綜合評分',  va:`${a.total||0}/25`,                      vb:`${b.total||0}/25`,                      win:(a.total||0)>(b.total||0)?'a':(a.total||0)<(b.total||0)?'b':'tie'},
+    {l:'意願',      va:({want:'✅想租',maybe:'🤔再想想',no:'⛔不考慮','':'未決定'})[a.dec||''], vb:({want:'✅想租',maybe:'🤔再想想',no:'⛔不考慮','':'未決定'})[b.dec||''], win:''},
+  ];
+  // score board
+  const SCORES_DETAIL=SCORES.map(s=>({l:s.l,va:`${(a.scores||{})[s.k]||0}⭐`,vb:`${(b.scores||{})[s.k]||0}⭐`,win:((a.scores||{})[s.k]||0)>((b.scores||{})[s.k]||0)?'a':((a.scores||{})[s.k]||0)<((b.scores||{})[s.k]||0)?'b':'tie'}));
+  const MUST_DETAIL=MUST_ITEMS.map(({k,l})=>({l,va:(a.must||{})[k]?'✅':'❌',vb:(b.must||{})[k]?'✅':'❌',win:(a.must||{})[k]&&!(b.must||{})[k]?'a':!(a.must||{})[k]&&(b.must||{})[k]?'b':'tie'}));
+  const aWins=rows.filter(r=>r.win==='a').length+SCORES_DETAIL.filter(r=>r.win==='a').length;
+  const bWins=rows.filter(r=>r.win==='b').length+SCORES_DETAIL.filter(r=>r.win==='b').length;
+  const winner=aWins>bWins?a.name:aWins<bWins?b.name:'平手';
+
+  function makeRow(r){
+    const ac=r.win==='a'?'background:#D4EDDA;font-weight:700':'';
+    const bc=r.win==='b'?'background:#D4EDDA;font-weight:700':'';
+    const tie=r.win==='tie'?'background:#FFF8E7':'';
+    return `<tr>
+      <td style="padding:9px 10px;border-bottom:1px solid var(--border);font-size:.8rem;color:var(--ink2);font-weight:600">${r.l}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid var(--border);text-align:center;font-size:.84rem;${ac||tie}">${r.va}${r.win==='a'?' 🏆':''}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid var(--border);text-align:center;font-size:.84rem;${bc||tie}">${r.vb}${r.win==='b'?' 🏆':''}</td>
+    </tr>`;
+  }
+
+  res.innerHTML=`
+    <div class="fcard" style="border:2px solid var(--accent)">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:.78rem;color:var(--ink2);margin-bottom:4px">勝出</div>
+        <div style="font-size:1.3rem;font-weight:700;color:var(--accent)">${winner==='平手'?'🤝 平手！':'🏆 '+winner}</div>
+        <div style="font-size:.75rem;color:var(--ink2);margin-top:4px">${a.name} ${aWins}勝 vs ${b.name} ${bWins}勝</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="background:var(--surface2)">
+          <th style="padding:8px 10px;font-size:.75rem;text-align:left;color:var(--ink2)">項目</th>
+          <th style="padding:8px 10px;font-size:.85rem;text-align:center;color:var(--accent);font-weight:700">${a.name}</th>
+          <th style="padding:8px 10px;font-size:.85rem;text-align:center;color:var(--accent4);font-weight:700">${b.name}</th>
+        </tr>
+        <tr><td colspan="3" style="padding:6px 10px;font-size:.72rem;font-weight:700;color:var(--ink2);background:var(--surface2)">📊 基本資訊</td></tr>
+        ${rows.map(makeRow).join('')}
+        <tr><td colspan="3" style="padding:6px 10px;font-size:.72rem;font-weight:700;color:var(--ink2);background:var(--surface2)">⭐ 各面向評分</td></tr>
+        ${SCORES_DETAIL.map(makeRow).join('')}
+        <tr><td colspan="3" style="padding:6px 10px;font-size:.72rem;font-weight:700;color:var(--ink2);background:var(--surface2)">✅ 必要條件</td></tr>
+        ${MUST_DETAIL.map(makeRow).join('')}
+      </table>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        ${a.addr?`<a href="https://maps.google.com/?q=${encodeURIComponent(a.addr)}" target="_blank" class="btn btns" style="font-size:.75rem;padding:5px 11px;text-decoration:none">📍 ${a.name} 地圖</a>`:''}
+        ${b.addr?`<a href="https://maps.google.com/?q=${encodeURIComponent(b.addr)}" target="_blank" class="btn btns" style="font-size:.75rem;padding:5px 11px;text-decoration:none">📍 ${b.name} 地圖</a>`:''}
+      </div>
+    </div>`;
+  res.scrollIntoView({behavior:'smooth'});
+}
+
+// ── INIT ──
+function init(){
+  movingS=JSON.parse(localStorage.getItem('tc25-mv')||'{}');
+  buildMust();buildBonus();buildEquip();buildAmen();buildScores();
+  buildSpecial();buildInspect();buildMoveinChecklist();
+  bindCostCalc();renderGrid();updateCount();renderWatch();
+}
+init();
+</script>
+</body>
+</html>
